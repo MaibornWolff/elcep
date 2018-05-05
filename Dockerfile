@@ -1,19 +1,21 @@
-FROM library/golang:alpine
+FROM library/golang:alpine AS build-env
 
-RUN apk add --no-cache git mercurial
+RUN apk add --no-cache git gcc musl-dev
 
-RUN go get github.com/prometheus/client_golang/prometheus
-RUN go get github.com/prometheus/client_golang/prometheus/promhttp
+RUN mkdir /go/src/elcep
+COPY . /go/src/elcep/
+WORKDIR /go/src/elcep
 
-COPY elcep/*.go ./
-RUN go build -o logmonitor
+RUN go get -d -v -t ./...
+RUN go test -v ./...
+RUN go build -o elcep
 
 FROM alpine
 
-RUN mkdir -p /go/src/github.com
-COPY --from=0 /go/logmonitor /
-COPY --from=0 /go/src/github.com /go/src/github.com
-COPY /conf/queries.cfg /conf/queries.cfg
+WORKDIR /app
+COPY --from=build-env /go/src/elcep/elcep /app/
+COPY --from=build-env /go/src/elcep/plugins /app/plugins
+COPY --from=build-env /go/src/elcep/conf /app/conf
 
-ENTRYPOINT ["./logmonitor"]
+ENTRYPOINT ["./elcep"]
 CMD [""]

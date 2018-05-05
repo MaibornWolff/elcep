@@ -9,7 +9,7 @@ Configure the queries one per line in the queries.cfg in the following notation:
 
 Via command line arguments the following options can be overwritten:
 ```
-  -config string
+  -elasticqueries string
     	The path to the queries.cfg (default "./conf/queries.cfg")
   -freq int
     	The interval in seconds in which to query elastic search (default 30)
