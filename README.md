@@ -5,6 +5,12 @@ ELCEP - Elastic Log Counter Exporter for Prometheus
 It is a small go service which provides prometheus counter metrics based on custom lucene queries to an elastic search instance.
 
 ## How do I use it?
+Most convenient is running it as the docker image published here: https://hub.docker.com/r/maibornwolff/elcep/ eg:
+```
+docker run maibornwolff/elcep -host <your elastic search instance>
+```
+
+## How do I configure it?
 Configure the queries one per line in the queries.cfg in the following notation: `<name>=<query>`
 
 Via command line arguments the following options can be overwritten:
