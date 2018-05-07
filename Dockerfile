@@ -2,7 +2,9 @@ FROM library/golang:alpine AS build-env
 
 RUN apk add --no-cache git gcc musl-dev
 
-RUN mkdir /go/src/elcep
+RUN mkdir -p /go/src/elcep/plugins
+RUN mkdir /go/src/elcep/conf
+
 COPY . /go/src/elcep/
 WORKDIR /go/src/elcep
 
