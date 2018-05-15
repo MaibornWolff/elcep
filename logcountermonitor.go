@@ -29,7 +29,7 @@ func (logMon *LogCounterMonitor) BuildMetrics(query monitor.Query) *[]prometheus
 	logMon.metrics.rpcDurationHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Name:    "elcep_logs_matched_rpc_durations_" + logMon.Query.Name + "_histogram_seconds",
 		Help:    "Logs matched RPC latency distributions for " + logMon.Query.Name,
-		Buckets: prometheus.LinearBuckets(0.001, 0.001, 10),
+		Buckets: prometheus.DefBuckets,
 	})
 
 	return &[]prometheus.Collector{logMon.metrics.matchCounter, logMon.metrics.rpcDurationHistogram}
