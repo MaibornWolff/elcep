@@ -15,7 +15,7 @@ RUN go build -o elcep
 FROM alpine
 
 WORKDIR /app
-COPY --from=build-env /go/src/github.com/MaibornWolff/elcep /app/
+COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/elcep /app/
 COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/plugins /app/plugins
 COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/conf /app/conf
 
