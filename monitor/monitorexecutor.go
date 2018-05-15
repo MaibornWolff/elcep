@@ -11,17 +11,17 @@ import (
 //Executor for controlling LogMonitor instances
 type Executor struct {
 	LogMonitors    []LogMonitor
-	QueryExecution func(string, string) (*Hits, error)
+	QueryExecution func(string) (*Hits, error)
 }
 
 //BuildMonitors create new Instances form given Monitortype for each query and register all metrics
-func (executor *Executor) BuildMonitors(plainqueries *map[string]string, newMonitor func() LogMonitor) {
-	for name, queryBody := range *plainqueries {
+func (executor *Executor) BuildMonitors(plainqueries map[string]string, newMonitor func() LogMonitor) {
+	for name, queryBody := range plainqueries {
 		logMonitor := newMonitor()
 		query := Query{
-			Name: name,
-			Body: queryBody,
-			Exec: executor.QueryExecution,
+			Name:   name,
+			filter: queryBody,
+			Exec:   executor.QueryExecution,
 		}
 
 		metrics := logMonitor.BuildMetrics(query)

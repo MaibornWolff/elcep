@@ -33,8 +33,8 @@ type ElasticResponse struct {
 }
 
 //ExecRequest on elasticsearch host
-func (provider *ElasticSearchProvider) ExecRequest(querypath string, request string) (*monitor.Hits, error) {
-	url := fmt.Sprintf(provider.URL + querypath)
+func (provider *ElasticSearchProvider) ExecRequest(request string) (*monitor.Hits, error) {
+	url := fmt.Sprintf(provider.URL + "/_search")
 	elResponse := &ElasticResponse{}
 
 	req, err := http.NewRequest("GET", url, bytes.NewBufferString(request))

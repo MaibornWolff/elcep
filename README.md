@@ -52,3 +52,7 @@ GET /_search
    "size":0
 }
 ```
+
+## Building custom Monitors as a plugin
+
+[see here](BUILD-CUSTOM-MONITOR.md)

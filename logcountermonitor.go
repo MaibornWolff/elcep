@@ -7,8 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-const queryPath string = "/_search"
-
 //LogCounterMonitor for all Monitor based on Counter
 type LogCounterMonitor struct {
 	Query     monitor.Query
@@ -49,7 +47,7 @@ func (logMon *LogCounterMonitor) Perform() {
 
 func (logMon *LogCounterMonitor) countLogs() float64 {
 	start := time.Now()
-	response, _ := logMon.Query.Exec(queryPath, logMon.Query.Body)
+	response, _ := logMon.Query.Exec(logMon.Query.BuildBody("0"))
 	end := time.Now()
 
 	duration := end.Sub(start).Seconds()

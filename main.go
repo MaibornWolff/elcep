@@ -27,25 +27,28 @@ func main() {
 		URL: cmdlineProvider.Options.ElasticsearchURL,
 	}
 
+	pluginProvider := adapter.NewPluginProvider("./plugins")
+
 	executor := &monitor.Executor{}
-	queryProvider := &adapter.QueryProvider{}
+	queryProvider := adapter.NewQueryProvider(cmdlineProvider.Options.ElasticsearchQueryFile, pluginProvider.GetPluginNames())
 
 	executor.QueryExecution = elProvider.ExecRequest
-	queryProvider.Read(cmdlineProvider.Options.ElasticsearchQueryFile)
 	queryProvider.Print()
 
-	//TODO if we want to use muliple monitor types here we have to distict the queries
-	executor.BuildMonitors(queryProvider.Queries, func() monitor.LogMonitor {
-		return &LogCounterMonitor{}
-	})
-
-	//Example: Register some other monitor (should get other queries)
-	//executor.BuildMonitors(queryProvider.Queries, func() monitor.LogMonitor {
-	//	return &SomeOtherMonitor{}
-	//})
+	buildAllMonitors(executor, pluginProvider, queryProvider)
 
 	go executor.PerformMonitors(cmdlineProvider.Options.Freq)
 
 	http.Handle(cmdlineProvider.Options.Path, promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(cmdlineProvider.Options.Port), nil))
+}
+
+func buildAllMonitors(executor *monitor.Executor, pluginProvider *adapter.PluginProvider, queryProvider *adapter.QueryProvider) {
+	executor.BuildMonitors(queryProvider.QuerySets["default"].Queries, func() monitor.LogMonitor {
+		return &LogCounterMonitor{}
+	})
+
+	for name, newMon := range pluginProvider.Monitors {
+		executor.BuildMonitors(queryProvider.QuerySets[name].Queries, newMon)
+	}
 }
