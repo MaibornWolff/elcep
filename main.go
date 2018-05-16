@@ -8,15 +8,18 @@ import (
 	"github.com/MaibornWolff/elcep/adapter"
 	"github.com/MaibornWolff/elcep/monitor"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"time"
 )
+
+var startup_time = time.Now()
 
 func main() {
 	cmdlineProvider := &adapter.CommandLineOptionProvider{
 		Options: adapter.CommandLineOption{
-			Freq:             30,
-			ElasticsearchURL: "http://elasticsearch:9200",
-			Port:             8080,
-			Path:             "/metrics",
+			Freq:                   30,
+			ElasticsearchURL:       "http://elasticsearch:9200",
+			Port:                   8080,
+			Path:                   "/metrics",
 			ElasticsearchQueryFile: "./conf/queries.cfg",
 		},
 	}

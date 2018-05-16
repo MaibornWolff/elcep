@@ -47,7 +47,7 @@ func (logMon *LogCounterMonitor) Perform() {
 
 func (logMon *LogCounterMonitor) countLogs() float64 {
 	start := time.Now()
-	response, _ := logMon.Query.Exec(logMon.Query.BuildBody("0", time.Now()))
+	response, _ := logMon.Query.Exec(logMon.Query.BuildBody("0", startup_time))
 	end := time.Now()
 
 	duration := end.Sub(start).Seconds()
