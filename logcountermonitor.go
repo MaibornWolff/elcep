@@ -11,7 +11,7 @@ import (
 type LogCounterMonitor struct {
 	Query     monitor.Query
 	LastCount *float64
-	metrics   struct {
+	metrics struct {
 		matchCounter         prometheus.Counter
 		rpcDurationHistogram prometheus.Histogram
 	}
@@ -47,7 +47,7 @@ func (logMon *LogCounterMonitor) Perform() {
 
 func (logMon *LogCounterMonitor) countLogs() float64 {
 	start := time.Now()
-	response, _ := logMon.Query.Exec(logMon.Query.BuildBody("0"))
+	response, _ := logMon.Query.Exec(logMon.Query.BuildBody("0", time.Now()))
 	end := time.Now()
 
 	duration := end.Sub(start).Seconds()

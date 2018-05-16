@@ -44,12 +44,24 @@ Using that elastic search query:
 ```
 GET /_search
 {
-   "query": {
-       "query_string": {
-           "query": "message:exception AND service_name:application_*"
-       }
-   },
-   "size":0
+  "query": {
+    "bool": {
+      "must": {
+        "query_string": {
+          "query": "message:exception AND service_name:application_*"
+        }
+      },
+      "filter": {
+        "range": {
+          "@timestamp": {
+            "gte": "<formatted service startup time>",
+            "format": "yyyy-MM-dd hh:mm:ss"
+          }
+        }
+      }
+    }
+  },
+  "size":<size>
 }
 ```
 
