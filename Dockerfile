@@ -1,5 +1,7 @@
 FROM library/golang:alpine AS build-env
 
+LABEL version=0.4
+
 RUN apk add --no-cache git gcc musl-dev
 
 RUN mkdir -p /go/src/github.com/MaibornWolff/elcep
