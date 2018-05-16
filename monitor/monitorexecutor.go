@@ -42,8 +42,8 @@ func (executor *Executor) PerformMonitors(freq int) {
 	}
 }
 
-func (executor *Executor) register(metrics *[]prometheus.Collector) {
-	for _, metric := range *metrics {
+func (executor *Executor) register(metrics []prometheus.Collector) {
+	for _, metric := range metrics {
 		prometheus.MustRegister(metric)
 	}
 }

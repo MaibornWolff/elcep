@@ -18,7 +18,7 @@ type LogCounterMonitor struct {
 }
 
 //BuildMetrics should setup the Prometheus metrics
-func (logMon *LogCounterMonitor) BuildMetrics(query monitor.Query) *[]prometheus.Collector {
+func (logMon *LogCounterMonitor) BuildMetrics(query monitor.Query) []prometheus.Collector {
 	logMon.LastCount = new(float64)
 	logMon.Query = query
 
@@ -32,7 +32,7 @@ func (logMon *LogCounterMonitor) BuildMetrics(query monitor.Query) *[]prometheus
 		Buckets: prometheus.DefBuckets,
 	})
 
-	return &[]prometheus.Collector{logMon.metrics.matchCounter, logMon.metrics.rpcDurationHistogram}
+	return []prometheus.Collector{logMon.metrics.matchCounter, logMon.metrics.rpcDurationHistogram}
 }
 
 //Perform executes the query for this monitor
