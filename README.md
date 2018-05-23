@@ -7,7 +7,7 @@ It is a small go service which provides prometheus counter metrics based on cust
 ## How do I use it?
 Most convenient is running it as the docker image published here: https://hub.docker.com/r/maibornwolff/elcep/ eg:
 ```
-docker run maibornwolff/elcep -host <your elastic search instance>
+docker run maibornwolff/elcep -url <address to elastic search instance (protocol://hostname:port)>
 ```
 
 ## How do I configure it?
@@ -19,7 +19,7 @@ Via command line arguments the following options can be overwritten:
     	The path to the queries.cfg (default "./conf/queries.cfg")
   -freq int
     	The interval in seconds in which to query elastic search (default 30)
-  -host string
+  -url string
     	The elastic search endpoint (default "http://elasticsearch:9200")
   -path string
     	The path to listen on for HTTP requests (default "/metrics")
