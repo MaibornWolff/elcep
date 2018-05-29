@@ -1,4 +1,4 @@
-FROM library/golang:alpine AS build-env
+FROM library/golang:1.10.2-alpine AS build-env
 
 LABEL version=0.4
 
