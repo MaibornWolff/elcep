@@ -87,7 +87,7 @@ go build --buildmode=plugin -o custommonitor.so
 **Caution:** the plugin buildmode is currently only available on linux. If you work on mac or windows, you can use a container to build your plugin: 
 
 ```
-$ docker run -v $PWD:/go/src/app  -it golang:alpine sh
+$ docker run -v $PWD:/go/src/app  -it maibornwolff/elcep:builder-1.10.2 sh
 # apk add --no-cache git gcc musl-dev
 # cd /go/src/app
 # go get

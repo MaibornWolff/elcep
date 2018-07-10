@@ -1,8 +1,6 @@
-FROM library/golang:1.10.2-alpine AS build-env
+FROM maibornwolff/elcep:builder-1.10.2 AS build-env
 
-LABEL version=0.4
-
-RUN apk add --no-cache git gcc musl-dev
+LABEL version=0.5
 
 RUN mkdir -p /go/src/github.com/MaibornWolff/elcep
 RUN mkdir -p /go/src/github.com/MaibornWolff/elcep/plugins
