@@ -25,6 +25,8 @@ Via command line arguments the following options can be overwritten:
     	The path to listen on for HTTP requests (default "/metrics")
   -port int
     	The port to listen on for HTTP requests (default 8080)
+  -time-key string
+        The time key to use in elastic search queries (default "@timestamp")
 ```
 
 ### Example:

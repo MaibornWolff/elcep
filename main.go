@@ -21,6 +21,7 @@ func main() {
 			Port:                   8080,
 			Path:                   "/metrics",
 			ElasticsearchQueryFile: "./conf/queries.cfg",
+			TimeKey:                "@timestamp",
 		},
 	}
 	cmdlineProvider.ReadCmdLineOptions()
@@ -38,7 +39,7 @@ func main() {
 	executor.QueryExecution = elProvider.ExecRequest
 	queryProvider.Print()
 
-	buildAllMonitors(executor, pluginProvider, queryProvider)
+	buildAllMonitors(executor, pluginProvider, queryProvider, cmdlineProvider)
 
 	go executor.PerformMonitors(cmdlineProvider.Options.Freq)
 
@@ -46,12 +47,12 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(cmdlineProvider.Options.Port), nil))
 }
 
-func buildAllMonitors(executor *monitor.Executor, pluginProvider *adapter.PluginProvider, queryProvider *adapter.QueryProvider) {
-	executor.BuildMonitors(queryProvider.QuerySets["default"].Queries, func() monitor.LogMonitor {
+func buildAllMonitors(executor *monitor.Executor, pluginProvider *adapter.PluginProvider, queryProvider *adapter.QueryProvider, cmdlineProvider *adapter.CommandLineOptionProvider) {
+	executor.BuildMonitors(cmdlineProvider.Options.TimeKey, queryProvider.QuerySets["default"].Queries, func() monitor.LogMonitor {
 		return &LogCounterMonitor{}
 	})
 
 	for name, newMon := range pluginProvider.Monitors {
-		executor.BuildMonitors(queryProvider.QuerySets[name].Queries, newMon)
+		executor.BuildMonitors(cmdlineProvider.Options.TimeKey, queryProvider.QuerySets[name].Queries, newMon)
 	}
 }

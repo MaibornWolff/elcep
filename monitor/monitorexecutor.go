@@ -15,13 +15,14 @@ type Executor struct {
 }
 
 //BuildMonitors create new Instances form given Monitortype for each query and register all metrics
-func (executor *Executor) BuildMonitors(plainqueries map[string]string, newMonitor func() LogMonitor) {
+func (executor *Executor) BuildMonitors(timeKey string, plainqueries map[string]string, newMonitor func() LogMonitor) {
 	for name, queryBody := range plainqueries {
 		logMonitor := newMonitor()
 		query := Query{
-			Name:   name,
-			filter: queryBody,
-			Exec:   executor.QueryExecution,
+			Name:    name,
+			filter:  queryBody,
+			Exec:    executor.QueryExecution,
+			timeKey: timeKey,
 		}
 
 		metrics := logMonitor.BuildMetrics(query)
