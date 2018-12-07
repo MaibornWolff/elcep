@@ -55,7 +55,7 @@ GET /_search
       },
       "filter": {
         "range": {
-          "@timestamp": {
+          "<time-key>": {
             "gte": "<formatted service startup time>",
             "format": "yyyy-MM-dd hh:mm:ss"
           }
