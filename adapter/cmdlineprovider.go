@@ -17,6 +17,7 @@ type CommandLineOption struct {
 	Port                   int
 	Path                   string
 	ElasticsearchQueryFile string
+	TimeKey                string
 }
 
 //ReadCmdLineOptions merge defaults with cmdline parameter
@@ -26,6 +27,7 @@ func (provider *CommandLineOptionProvider) ReadCmdLineOptions() {
 	flag.StringVar(&provider.Options.Path, "path", provider.Options.Path, "The path to listen on for HTTP requests")
 	flag.IntVar(&provider.Options.Freq, "freq", provider.Options.Freq, "The interval in seconds in which to query elastic search")
 	flag.StringVar(&provider.Options.ElasticsearchQueryFile, "elasticqueries", provider.Options.ElasticsearchQueryFile, "The path to the queries.cfg")
+	flag.StringVar(&provider.Options.TimeKey, "time-key", provider.Options.TimeKey, "The time key to use in elastic search queries")
 	flag.Parse()
 }
 
@@ -36,4 +38,5 @@ func (provider *CommandLineOptionProvider) PrintCmdLineOptions() {
 	log.Println("\tFreq:", provider.Options.Freq)
 	log.Println("\tPort:", provider.Options.Port)
 	log.Println("\tElasticsearch Configuration File:", provider.Options.ElasticsearchQueryFile)
+	log.Println("\tTime Key:", provider.Options.TimeKey)
 }

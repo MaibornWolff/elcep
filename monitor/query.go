@@ -7,15 +7,17 @@ import (
 
 //Query defines an executable query with name
 type Query struct {
-	Name   string
-	filter string
-	Exec   func(string) (*Hits, error)
+	Name    string
+	filter  string
+	Exec    func(string) (*Hits, error)
+	timeKey string
 }
 
 //BuildBody builds a complete query
 func (query *Query) BuildBody(size string, since time.Time) string {
 	body := strings.Replace(queryTemplate, "<size>", size, 1)
 	body = strings.Replace(body, "<timestamp>", formatTime(since), 1)
+	body = strings.Replace(body, "<time-key>", query.timeKey, 1)
 	return strings.Replace(body, "<query>", query.filter, 1)
 }
 
@@ -33,7 +35,7 @@ const queryTemplate = `{
       },
       "filter": {
         "range": {
-          "@timestamp": {
+          "<time-key>": {
             "gte": "<timestamp>",
             "format": "yyyy-MM-dd HH:mm:ss"
           }
