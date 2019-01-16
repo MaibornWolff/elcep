@@ -1,10 +1,8 @@
 package adapter
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 	"plugin"
 
@@ -12,15 +10,13 @@ import (
 )
 
 type PluginProvider struct {
-	pluginFolder string
-	Monitors     map[string]func() monitor.LogMonitor
+	Monitors map[string]func() monitor.LogMonitor
 }
 
 //NewPluginProvider returns an instance with loaded LogMonitors from plugin Files
 func NewPluginProvider(pluginFolder string) *PluginProvider {
 	provider := &PluginProvider{}
-	provider.pluginFolder = pluginFolder
-	files := provider.findPluginFileNames()
+	files := findPlugins(pluginFolder)
 	provider.initializePlugins(files)
 	return provider
 }
@@ -34,44 +30,41 @@ func (provider *PluginProvider) GetPluginNames() []string {
 	return keys
 }
 
+func findPlugins(pluginFolder string) []string {
+	var foundFileNames []string
+
+	if files, err := ioutil.ReadDir(pluginFolder); err != nil {
+		log.Fatal(err)
+	} else {
+		for _, f := range files {
+			foundFileNames = append(foundFileNames, filepath.Join(pluginFolder, f.Name()))
+		}
+	}
+
+	return foundFileNames
+}
+
 func (provider *PluginProvider) initializePlugins(fileNames []string) {
 	provider.Monitors = make(map[string]func() monitor.LogMonitor)
 	for _, file := range fileNames {
 		plug, err := plugin.Open(file)
 		if err != nil {
-			log.Printf("%s: os.Open(): %s\n", file, err)
-			os.Exit(1)
+			log.Fatalf("%s: os.Open(): %s\n", file, err)
 		}
 
 		sym, err := plug.Lookup("NewMonitor")
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
 
 		m, ok := sym.(func() monitor.LogMonitor)
 		if !ok {
-			fmt.Println("unexpected type from module symbol")
-			os.Exit(1)
+			log.Fatal("unexpected type from module symbol NewMonitor. Expected `monitor.LogMonitor`")
 		}
 
-		provider.Monitors[getLogicalPluginName(file)] = m
+		pluginName := getLogicalPluginName(file)
+		provider.Monitors[pluginName] = m
 	}
-}
-
-func (provider *PluginProvider) findPluginFileNames() []string {
-	var foundFileNames []string
-
-	files, err := ioutil.ReadDir(provider.pluginFolder)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, f := range files {
-		foundFileNames = append(foundFileNames, filepath.Join(provider.pluginFolder, f.Name()))
-	}
-
-	return foundFileNames
 }
 
 func getLogicalPluginName(file string) string {

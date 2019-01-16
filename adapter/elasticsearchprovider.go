@@ -16,7 +16,7 @@ type ElasticSearchProvider struct {
 }
 
 //ElasticResponse defines as response from a query
-type ElasticResponse struct {
+type elasticResponse struct {
 	Took     int  `Json:"took"`
 	TimedOut bool `Json:"timed_out"`
 	Shards   struct {
@@ -35,7 +35,7 @@ type ElasticResponse struct {
 //ExecRequest on elasticsearch host
 func (provider *ElasticSearchProvider) ExecRequest(request string) (*monitor.Hits, error) {
 	url := fmt.Sprintf(provider.URL + "/_search")
-	elResponse := &ElasticResponse{}
+	elResponse := &elasticResponse{}
 
 	req, err := http.NewRequest("GET", url, bytes.NewBufferString(request))
 	req.Header.Set("Content-Type", "application/Json")
@@ -48,12 +48,14 @@ func (provider *ElasticSearchProvider) ExecRequest(request string) (*monitor.Hit
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal("Do: ", err)
+		log.Println("Do: ", err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if err := json.NewDecoder(resp.Body).Decode(elResponse); err != nil {
 		log.Println(err)
+		return nil, err
 	}
 
 	return &monitor.Hits{

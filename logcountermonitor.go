@@ -7,11 +7,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+var startupTime = time.Now()
+
 //LogCounterMonitor for all Monitor based on Counter
 type LogCounterMonitor struct {
 	Query     monitor.Query
 	LastCount *float64
-	metrics struct {
+	metrics   struct {
 		matchCounter         prometheus.Counter
 		rpcDurationHistogram prometheus.Histogram
 	}
@@ -47,7 +49,7 @@ func (logMon *LogCounterMonitor) Perform() {
 
 func (logMon *LogCounterMonitor) countLogs() float64 {
 	start := time.Now()
-	response, _ := logMon.Query.Exec(logMon.Query.BuildBody("0", startup_time))
+	response, _ := logMon.Query.Exec(logMon.Query.BuildBody("0", startupTime))
 	end := time.Now()
 
 	duration := end.Sub(start).Seconds()

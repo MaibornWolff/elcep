@@ -1,17 +1,17 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/MaibornWolff/elcep/adapter"
 	"github.com/MaibornWolff/elcep/monitor"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
-
-var startupTime = time.Now()
 
 func main() {
 	options := adapter.ParseOptions()
@@ -30,19 +30,25 @@ func initExecutor(cliOptions *adapter.CommandLineOption) *monitor.Executor {
 	elProvider := &adapter.ElasticSearchProvider{
 		URL: cliOptions.ElasticsearchURL,
 	}
-	executor := &monitor.Executor{}
-	executor.QueryExecution = elProvider.ExecRequest
+	executor := &monitor.Executor{
+		QueryExecution: elProvider.ExecRequest,
+	}
 
-	queryProvider := adapter.NewQueryProvider(pluginProvider.GetPluginNames())
-	queryProvider.Print()
+	config := adapter.ReadConfig(pluginProvider.GetPluginNames(), getConfigFile)
+	config.Print()
 
-	buildAllMonitors(executor, pluginProvider, queryProvider, cliOptions)
+	for name, newMon := range pluginProvider.Monitors {
+		executor.BuildMonitors(cliOptions.TimeKey, config.ForPlugin(name), newMon)
+	}
 
 	return executor
 }
 
-func buildAllMonitors(executor *monitor.Executor, pluginProvider *adapter.PluginProvider, queryProvider *adapter.QueryProvider, options *adapter.CommandLineOption) {
-	for name, newMon := range pluginProvider.Monitors {
-		executor.BuildMonitors(options.TimeKey, queryProvider.QuerySets[name].Queries, newMon)
+func getConfigFile(pluginName string) io.ReadCloser {
+	filepath := filepath.Join("conf", pluginName+".cfg")
+	fileHandle, err := os.Open(filepath)
+	if err != nil {
+		log.Fatalf("Could not read config file for plugin %s, expected file: %s", pluginName, filepath)
 	}
+	return fileHandle
 }
