@@ -1,0 +1,45 @@
+version: '3'
+services:
+
+# search engine, storage
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.1.1
+    ports:
+      - 9200:9200
+
+  elcep:
+    build: ..
+    depends_on:
+      - elasticsearch
+    ports:
+      - 8080:8080
+    # wait for elasticsearch
+    restart: on-failure
+
+
+# logs visualizer
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.1.1
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    environment:
+      # this is default, so not strictly necessary
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+
+# metrics collector
+  prometheus:
+    image: prom/prometheus:v2.4.0
+    depends_on:
+      - elcep
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+
+# log dummy data
+  log-generator:
+    build: ./log-generator
+    depends_on:
+      - elasticsearch
