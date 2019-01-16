@@ -14,9 +14,9 @@ RUN go test -v ./...
 RUN go build -o elcep
 
 # build plugins
-WORKDIR /go/src/github.com/MaibornWolff/elcep/plugin-counter
-RUN go get -d -v -t ./...
-RUN go build --buildmode=plugin -o /go/src/github.com/MaibornWolff/elcep/plugins/plugin-counter.so
+WORKDIR /go/src/github.com/MaibornWolff/elcep/plugins
+RUN for dir in */; do OUTPUT_DIR="$(pwd)" ./${dir}build.sh; done
+
 FROM alpine
 
 WORKDIR /app

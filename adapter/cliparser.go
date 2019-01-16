@@ -44,6 +44,5 @@ func (option *CommandLineOption) PrintCmdLineOptions() {
 	log.Println("\tUrl:", option.ElasticsearchURL)
 	log.Println("\tFreq:", option.Freq)
 	log.Println("\tPort:", option.Port)
-	log.Println("\tElasticsearch Configuration File:", option.ElasticsearchQueryFile)
 	log.Println("\tTime Key:", option.TimeKey)
 }
