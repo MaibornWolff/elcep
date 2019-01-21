@@ -45,30 +45,23 @@ func (logMon *LogCounterMonitor) BuildMetrics(query monitor.Query) []prometheus.
 
 // Perform must exist and implement some custom action which runs frequently
 func (logMon *LogCounterMonitor) Perform() {
-	increment := logMon.countLogs()
-
-	if increment < 0 {
-		increment = 0
-	}
+	increment, duration := logMon.runQuery()
+	logMon.metrics.rpcDurationHistogram.Observe(duration)
 	logMon.metrics.matchCounter.Add(increment)
 }
 
-func (logMon *LogCounterMonitor) countLogs() float64 {
+func (logMon *LogCounterMonitor) runQuery() (increment float64, duration float64) {
 	start := time.Now()
 	response, err := logMon.query.Exec(logMon.query.BuildBody("0", startupTime))
-	end := time.Now()
+	duration = time.Now().Sub(start).Seconds()
 
-	if err != nil {
-		return *logMon.LastCount
+	if err == nil {
+		increment = response.Total - *logMon.LastCount
+		*logMon.LastCount = response.Total
+	} else {
+		increment = 0
 	}
-
-	duration := end.Sub(start).Seconds()
-	logMon.metrics.rpcDurationHistogram.Observe(duration)
-
-	inc := response.Total - *logMon.LastCount
-	*logMon.LastCount = response.Total
-	return inc
-
+	return
 }
 
 func main() {}

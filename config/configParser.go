@@ -18,6 +18,7 @@ type Configuration struct {
 //PluginConfig the configuration for a certain plugin
 type PluginConfig map[string]string
 
+//ForPlugin Get the configuration by plugin name
 func (config *Configuration) ForPlugin(pluginName string) PluginConfig {
 	return config.byFile[pluginName]
 }
