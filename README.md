@@ -10,6 +10,8 @@ Most convenient is running it as the docker image published here: https://hub.do
 docker run maibornwolff/elcep -url <address to elastic search instance (protocol://hostname:port)>
 ```
 
+You can have a look at [`examples/README.md`](examples/README.md) as well.
+
 ## How do I configure it?
 Configure the queries one per line in the queries.cfg in the following notation: `<name>=<query>`
 
@@ -53,7 +55,7 @@ GET /_search
       },
       "filter": {
         "range": {
-          "@timestamp": {
+          "<time-key>": {
             "gte": "<formatted service startup time>",
             "format": "yyyy-MM-dd hh:mm:ss"
           }
