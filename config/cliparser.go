@@ -1,4 +1,4 @@
-package adapter
+package config
 
 import (
 	"flag"
@@ -24,9 +24,11 @@ func defaultOptions() *CommandLineOption {
 	}
 }
 
-// ParseOptions returns the default options, overriden by the command line options if present
-func ParseOptions() *CommandLineOption {
+// ParseCliOptions returns the default options, overriden by the command line options if present
+func ParseCliOptions() *CommandLineOption {
 	var options = defaultOptions()
+
+	// TODO configuration for plugin folder + config folder
 
 	flag.StringVar(&options.ElasticsearchURL, "url", options.ElasticsearchURL, "The elastic search endpoint")
 	flag.IntVar(&options.Port, "port", options.Port, "The port to listen on for HTTP requests")
@@ -38,8 +40,8 @@ func ParseOptions() *CommandLineOption {
 	return options
 }
 
-//PrintCmdLineOptions as logs
-func (option *CommandLineOption) PrintCmdLineOptions() {
+//PrintCliOptions as logs
+func (option *CommandLineOption) PrintCliOptions() {
 	log.Println("Config:")
 	log.Println("\tUrl:", option.ElasticsearchURL)
 	log.Println("\tFreq:", option.Freq)

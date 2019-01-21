@@ -9,13 +9,14 @@ import (
 	"strconv"
 
 	"github.com/MaibornWolff/elcep/adapter"
+	"github.com/MaibornWolff/elcep/config"
 	"github.com/MaibornWolff/elcep/monitor"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
-	options := adapter.ParseOptions()
-	options.PrintCmdLineOptions()
+	options := config.ParseCliOptions()
+	options.PrintCliOptions()
 	executor := initExecutor(options)
 
 	go executor.PerformMonitors(options.Freq)
@@ -24,7 +25,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(options.Port), nil))
 }
 
-func initExecutor(cliOptions *adapter.CommandLineOption) *monitor.Executor {
+func initExecutor(cliOptions *config.CommandLineOption) *monitor.Executor {
 	pluginProvider := adapter.NewPluginProvider("./plugins")
 
 	elProvider := &adapter.ElasticSearchProvider{
@@ -34,11 +35,11 @@ func initExecutor(cliOptions *adapter.CommandLineOption) *monitor.Executor {
 		QueryExecution: elProvider.ExecRequest,
 	}
 
-	config := adapter.ReadConfig(pluginProvider.GetPluginNames(), getConfigFile)
-	config.Print()
+	pluginConfig := config.ReadConfig(pluginProvider.GetPluginNames(), getConfigFile)
+	pluginConfig.Print()
 
 	for name, newMon := range pluginProvider.Monitors {
-		executor.BuildMonitors(cliOptions.TimeKey, config.ForPlugin(name), newMon)
+		executor.BuildMonitors(cliOptions.TimeKey, pluginConfig.ForPlugin(name), newMon)
 	}
 
 	return executor
