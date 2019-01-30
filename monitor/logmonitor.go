@@ -1,9 +1,13 @@
 package monitor
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/MaibornWolff/elcep/config"
+	"github.com/olivere/elastic"
+	"github.com/prometheus/client_golang/prometheus"
+)
 
-//LogMonitor should be used to setup prometheus
-type LogMonitor interface {
-	BuildMetrics(Query) []prometheus.Collector
-	Perform()
+//Plugin should be used to setup prometheus
+type Plugin interface {
+	BuildMetrics([]config.Query) []prometheus.Collector
+	Perform(*elastic.Client)
 }

@@ -5,41 +5,36 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/olivere/elastic"
+
+	"github.com/MaibornWolff/elcep/config"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 //Executor for controlling LogMonitor instances
 type Executor struct {
-	LogMonitors    []LogMonitor
+	Plugins        []Plugin
 	QueryExecution func(string) (*Hits, error)
+	ElasticClient  *elastic.Client
 }
 
 //BuildMonitors create new Instances form given Monitortype for each query and register all metrics
-func (executor *Executor) BuildMonitors(timeKey string, plainqueries map[string]string, newMonitor func() LogMonitor) {
-	for name, queryBody := range plainqueries {
-		logMonitor := newMonitor()
-		query := Query{
-			Name:    name,
-			filter:  queryBody,
-			Exec:    executor.QueryExecution,
-			timeKey: timeKey,
-		}
-
-		metrics := logMonitor.BuildMetrics(query)
-		executor.register(metrics)
-		executor.LogMonitors = append(executor.LogMonitors, logMonitor)
-
-		log.Println("Register Monitor:", reflect.TypeOf(logMonitor), " for query:", query.Name)
-	}
+func (executor *Executor) BuildMonitors(timeKey string, configuration config.PluginConfig, newMonitor func(interface{}) Plugin) {
+	plugin := newMonitor(configuration.Options)
+	metrics := plugin.BuildMetrics(configuration.Queries)
+	executor.register(metrics)
+	executor.Plugins = append(executor.Plugins, plugin)
+	log.Println("Plugin loaded:", reflect.TypeOf(plugin))
 }
 
 //PerformMonitors runs all Monitors in a loop
-func (executor *Executor) PerformMonitors(freq int) {
+func (executor *Executor) PerformMonitors(freq time.Duration) {
 	for {
-		for _, logMon := range executor.LogMonitors {
-			logMon.Perform()
+		for _, plugin := range executor.Plugins {
+			plugin.Perform(executor.ElasticClient)
 		}
-		time.Sleep(time.Duration(freq) * time.Second)
+		// TODO subtract passed time or put plugin.Perform in goroutine
+		time.Sleep(freq)
 	}
 }
 

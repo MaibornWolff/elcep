@@ -10,7 +10,7 @@ import (
 )
 
 type PluginProvider struct {
-	Monitors map[string]func() monitor.LogMonitor
+	Monitors map[string]func(interface{}) monitor.Plugin
 }
 
 //NewPluginProvider returns an instance with loaded LogMonitors from plugin Files
@@ -45,21 +45,21 @@ func findPlugins(pluginFolder string) []string {
 }
 
 func (provider *PluginProvider) initializePlugins(fileNames []string) {
-	provider.Monitors = make(map[string]func() monitor.LogMonitor)
+	provider.Monitors = make(map[string]func(interface{}) monitor.Plugin)
 	for _, file := range fileNames {
 		plug, err := plugin.Open(file)
 		if err != nil {
 			log.Fatalf("%s: os.Open(): %s\n", file, err)
 		}
 
-		sym, err := plug.Lookup("NewMonitor")
+		sym, err := plug.Lookup("NewPlugin")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		m, ok := sym.(func() monitor.LogMonitor)
+		m, ok := sym.(func(interface{}) monitor.Plugin)
 		if !ok {
-			log.Fatal("unexpected type from module symbol NewMonitor. Expected `monitor.LogMonitor`")
+			log.Fatal("unexpected type from module symbol NewPlugin. Expected `func(interface{}) monitor.Plugin`")
 		}
 
 		pluginName := getLogicalPluginName(file)

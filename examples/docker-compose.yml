@@ -11,7 +11,7 @@ services:
     build: ..
     depends_on:
       - elasticsearch
-    command: "-url http://elasticsearch:9200"
+    command: "--url http://elasticsearch:9200"
     ports:
       - 8080:8080
     # wait for elasticsearch

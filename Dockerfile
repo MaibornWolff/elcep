@@ -5,6 +5,14 @@ LABEL version=0.5
 RUN mkdir -p /go/src/github.com/MaibornWolff/elcep
 RUN mkdir -p /go/src/github.com/MaibornWolff/elcep/plugins
 
+# get some dependencies before copying the source
+# allows caching those deps =)
+RUN go get -v -d -t gopkg.in/alecthomas/kingpin.v2
+RUN go get -v -d -t gopkg.in/go-playground/assert.v1
+RUN go get -v -d -t gopkg.in/yaml.v2
+RUN go get -v -d -t github.com/olivere/elastic
+RUN go get -v -d -t github.com/prometheus/client_golang/prometheus
+
 COPY . /go/src/github.com/MaibornWolff/elcep
 WORKDIR /go/src/github.com/MaibornWolff/elcep
 
@@ -22,7 +30,6 @@ FROM alpine
 WORKDIR /app
 COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/elcep /app/
 COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/plugins/*.so /app/plugins/
-COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/conf /app/conf
+COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/conf/config.yaml /app/config.yaml
 
 ENTRYPOINT ["./elcep"]
-CMD [""]

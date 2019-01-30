@@ -1,55 +1,50 @@
 package main
 
 import (
-	"io"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/MaibornWolff/elcep/adapter"
 	"github.com/MaibornWolff/elcep/config"
 	"github.com/MaibornWolff/elcep/monitor"
+	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
-	options := config.ParseCliOptions()
-	options.PrintCliOptions()
-	executor := initExecutor(options)
+	configuration := config.ReadConfig()
+	executor := initExecutor(&configuration)
 
-	go executor.PerformMonitors(options.Freq)
+	go executor.PerformMonitors(configuration.Options.Freq)
 
-	http.Handle(options.Path, promhttp.Handler())
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(options.Port), nil))
+	http.Handle(configuration.Options.Path, promhttp.Handler())
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(configuration.Options.Port), nil))
 }
 
-func initExecutor(cliOptions *config.CommandLineOption) *monitor.Executor {
+func initExecutor(configuration *config.Configuration) *monitor.Executor {
 	pluginProvider := adapter.NewPluginProvider("./plugins")
 
 	elProvider := &adapter.ElasticSearchProvider{
-		URL: cliOptions.ElasticsearchURL,
+		URL: configuration.Options.ElasticsearchURL,
+	}
+	client, err := elastic.NewClient(elastic.SetURL(configuration.Options.ElasticsearchURL.String()))
+	if err != nil {
+		log.Fatal(err)
 	}
 	executor := &monitor.Executor{
+		// TODO remove elProvider (?)
 		QueryExecution: elProvider.ExecRequest,
+		ElasticClient:  client,
 	}
 
-	pluginConfig := config.ReadConfig(pluginProvider.GetPluginNames(), getConfigFile)
-	pluginConfig.Print()
-
 	for name, newMon := range pluginProvider.Monitors {
-		executor.BuildMonitors(cliOptions.TimeKey, pluginConfig.ForPlugin(name), newMon)
+		conf := configuration.ForPlugin(name)
+		if conf == nil {
+			log.Fatalf("Missing config for plugin %s\n", name)
+		}
+		executor.BuildMonitors(configuration.Options.TimeKey, *conf, newMon)
 	}
 
 	return executor
-}
-
-func getConfigFile(pluginName string) io.ReadCloser {
-	filepath := filepath.Join("conf", pluginName+".cfg")
-	fileHandle, err := os.Open(filepath)
-	if err != nil {
-		log.Fatalf("Could not read config file for plugin %s, expected file: %s", pluginName, filepath)
-	}
-	return fileHandle
 }

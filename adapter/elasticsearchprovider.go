@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/MaibornWolff/elcep/monitor"
 )
 
 //ElasticSearchProvider for Queries
 type ElasticSearchProvider struct {
-	URL string
+	URL *url.URL
 }
 
 //ElasticResponse defines as response from a query
@@ -34,7 +35,7 @@ type elasticResponse struct {
 
 //ExecRequest on elasticsearch host
 func (provider *ElasticSearchProvider) ExecRequest(request string) (*monitor.Hits, error) {
-	url := fmt.Sprintf(provider.URL + "/_search")
+	url := fmt.Sprintf(provider.URL.String() + "/_search")
 	elResponse := &elasticResponse{}
 
 	req, err := http.NewRequest("GET", url, bytes.NewBufferString(request))
