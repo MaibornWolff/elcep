@@ -17,10 +17,10 @@ type Executor struct {
 	ElasticClient *elastic.Client
 }
 
-// BuildPlugins create new Instances form given Monitortype for each query and register all metrics
-func (executor *Executor) BuildPlugins(configuration config.PluginConfig, newPlugin func(interface{}) Plugin) {
-	plugin := newPlugin(configuration.Options)
-	metrics := plugin.BuildMetrics(configuration.Queries)
+// BuildPlugins creates the plugin instances
+func (executor *Executor) BuildPlugins(configuration config.Configuration, pluginConfig config.PluginConfig, newPlugin func(config.Options, interface{}) Plugin) {
+	plugin := newPlugin(configuration.Options, pluginConfig.Options)
+	metrics := plugin.BuildMetrics(pluginConfig.Queries)
 	executor.register(metrics)
 	executor.Plugins = append(executor.Plugins, plugin)
 	log.Println("Plugin loaded: ", reflect.TypeOf(plugin))

@@ -17,8 +17,7 @@ type Options struct {
 	Config           string
 	PluginDir        string
 	Path             string
-	// FIXME timekey not used anywhere
-	TimeKey string
+	TimeKey          string
 }
 
 // Configuration holds both the application config and the plugin configuration

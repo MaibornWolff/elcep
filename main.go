@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/MaibornWolff/elcep/adapter"
 	"github.com/MaibornWolff/elcep/config"
 	"github.com/MaibornWolff/elcep/plugin"
 	"github.com/olivere/elastic"
@@ -23,7 +22,7 @@ func main() {
 }
 
 func initExecutor(configuration *config.Configuration) *plugin.Executor {
-	pluginProvider := adapter.NewPluginProvider(configuration.Options.PluginDir)
+	pluginProvider := plugin.NewPluginProvider(configuration.Options.PluginDir)
 
 	client, err := elastic.NewClient(elastic.SetURL(configuration.Options.ElasticsearchURL.String()))
 	if err != nil {
@@ -38,7 +37,7 @@ func initExecutor(configuration *config.Configuration) *plugin.Executor {
 		if conf == nil {
 			log.Fatalf("Missing config for plugin %s\n", name)
 		}
-		executor.BuildPlugins(*conf, newMon)
+		executor.BuildPlugins(*configuration, *conf, newMon)
 	}
 
 	return executor

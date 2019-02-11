@@ -1,29 +1,28 @@
-package adapter
+package plugin
 
 import (
+	"github.com/MaibornWolff/elcep/config"
 	"io/ioutil"
 	"log"
 	"path/filepath"
 	"plugin"
-
-	pluginApi "github.com/MaibornWolff/elcep/plugin"
 )
 
-// PluginProvider loads the plugin files and scans for available plugins
-type PluginProvider struct {
-	Plugins map[string]func(interface{}) pluginApi.Plugin
+// Provider loads the plugin files and scans for available plugins
+type Provider struct {
+	Plugins map[string]func(config.Options, interface{}) Plugin
 }
 
 // NewPluginProvider returns an instance with loaded Plugins from plugin Files
-func NewPluginProvider(pluginFolder string) *PluginProvider {
-	provider := &PluginProvider{}
+func NewPluginProvider(pluginFolder string) *Provider {
+	provider := &Provider{}
 	files := findPlugins(pluginFolder)
 	provider.initializePlugins(files)
 	return provider
 }
 
 // GetPluginNames returns a list of logical plugin names
-func (provider *PluginProvider) GetPluginNames() []string {
+func (provider *Provider) GetPluginNames() []string {
 	keys := make([]string, 0, len(provider.Plugins))
 	for k := range provider.Plugins {
 		keys = append(keys, k)
@@ -45,8 +44,8 @@ func findPlugins(pluginFolder string) []string {
 	return foundFileNames
 }
 
-func (provider *PluginProvider) initializePlugins(fileNames []string) {
-	provider.Plugins = make(map[string]func(interface{}) pluginApi.Plugin)
+func (provider *Provider) initializePlugins(fileNames []string) {
+	provider.Plugins = make(map[string]func(config.Options, interface{}) Plugin)
 	for _, file := range fileNames {
 		plug, err := plugin.Open(file)
 		if err != nil {
@@ -58,9 +57,9 @@ func (provider *PluginProvider) initializePlugins(fileNames []string) {
 			log.Fatal(err)
 		}
 
-		m, ok := sym.(func(interface{}) pluginApi.Plugin)
+		m, ok := sym.(func(config.Options, interface{}) Plugin)
 		if !ok {
-			var expected func(interface{}) pluginApi.Plugin
+			var expected func(config.Options, interface{}) Plugin
 			log.Fatalf("unexpected type from module symbol NewPlugin. Expected `%T`", expected)
 		}
 

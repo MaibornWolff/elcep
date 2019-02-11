@@ -5,16 +5,15 @@ import (
 	"log"
 	"time"
 
-	"github.com/olivere/elastic"
-
 	"github.com/MaibornWolff/elcep/config"
 	"github.com/MaibornWolff/elcep/plugin"
+	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 var startupTime = time.Now()
 
-// LogCounterMonitor is in this example the exported plugin type. It must implement BuildMetrics and Perform like below
+// LogCounterMonitor is a monitor for a certain query and exports both a Counter and a Histogram to Prometheus
 type LogCounterMonitor struct {
 	gauge     prometheus.Gauge
 	query     config.Query
@@ -25,7 +24,9 @@ type LogCounterMonitor struct {
 	}
 }
 
+// CounterPlugin is the exported plugin type. It implements plugin.Plugin
 type CounterPlugin struct {
+	timeKey    string
 	monitors   []*LogCounterMonitor
 	collectors []prometheus.Collector
 }
@@ -43,13 +44,16 @@ func (cp *CounterPlugin) BuildMetrics(queries []config.Query) []prometheus.Colle
 
 func (cp *CounterPlugin) Perform(elasticClient *elastic.Client) {
 	for _, monitor := range cp.monitors {
-		monitor.Perform(elasticClient)
+		monitor.Perform(elasticClient, cp.timeKey)
 	}
 }
 
 // NewPlugin must be exported. The name should be exactly "NewMonitor" and returns an instance of the custommonitor
-func NewPlugin(config interface{}) plugin.Plugin {
-	return &CounterPlugin{}
+// noinspection GoUnusedExportedFunction
+func NewPlugin(options config.Options, _ interface{}) plugin.Plugin {
+	return &CounterPlugin{
+		timeKey: options.TimeKey,
+	}
 }
 
 // BuildMetrics must exist and return a list of prometheus metrics instances
@@ -71,19 +75,19 @@ func (logMon *LogCounterMonitor) BuildMetrics(query config.Query) []prometheus.C
 }
 
 // Perform must exist and implement some custom action which runs frequently
-func (logMon *LogCounterMonitor) Perform(elasticClient *elastic.Client) {
-	increment, duration := logMon.runQuery(elasticClient)
+func (logMon *LogCounterMonitor) Perform(elasticClient *elastic.Client, timeKey string) {
+	increment, duration := logMon.runQuery(elasticClient, timeKey)
 	logMon.metrics.rpcDurationHistogram.Observe(duration)
 	logMon.metrics.matchCounter.Add(increment)
 }
 
-func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client) (increment float64, duration float64) {
+func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client, timeKey string) (increment float64, duration float64) {
 	start := time.Now()
 	query := elastic.NewBoolQuery().
 		Must(elastic.
 			NewQueryStringQuery(logMon.query.QueryText())).
 		Filter(elastic.
-			NewRangeQuery("@timestamp").
+			NewRangeQuery(timeKey).
 			Gte(startupTime.Format("2006-01-02 15:04:05")).
 			Format("yyyy-MM-dd HH:mm:ss"))
 	response, err := elasticClient.Search().Query(query).Do(context.Background())
