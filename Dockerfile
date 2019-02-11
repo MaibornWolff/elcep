@@ -30,6 +30,5 @@ FROM alpine
 WORKDIR /app
 COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/elcep /app/
 COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/shipped_plugins/*.so /app/plugins/
-COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/conf/config.yaml /app/config.yaml
 
 ENTRYPOINT ["./elcep"]

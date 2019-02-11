@@ -13,8 +13,6 @@ metrics:
   #- counter:
   #    all: ""
 
-
-
   exceptions:
     counter:
       all: "log:exception"

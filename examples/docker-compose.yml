@@ -11,12 +11,17 @@ services:
     build: ..
     depends_on:
       - elasticsearch
-    command: "--url http://elasticsearch:9200"
+    environment:
+      # these are the default values, but you might want to change them
+      ELCEP_ELASTIC_URL: http://elasticsearch:9200
+      ELCEP_POLL_FREQUENCY: 30s
+      ELCEP_PORT: 8080
+      ELCEP_METRICS_ENDPOINT: /metrics
     ports:
       - 8080:8080
       - 14500:14500 # wireshark
-    # wait for elasticsearch
-    restart: on-failure
+    volumes:
+      - ./elcep.yaml:/app/config.yaml
 
 
   # logs visualizer
