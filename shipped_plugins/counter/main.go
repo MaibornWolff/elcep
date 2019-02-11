@@ -8,13 +8,13 @@ import (
 	"github.com/olivere/elastic"
 
 	"github.com/MaibornWolff/elcep/config"
-	"github.com/MaibornWolff/elcep/monitor"
+	"github.com/MaibornWolff/elcep/plugin"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 var startupTime = time.Now()
 
-// LogCounterMonitor is in this example the exported monitor type. It must implement BuildMetrics and Perform like below
+// LogCounterMonitor is in this example the exported plugin type. It must implement BuildMetrics and Perform like below
 type LogCounterMonitor struct {
 	gauge     prometheus.Gauge
 	query     config.Query
@@ -48,7 +48,7 @@ func (cp *CounterPlugin) Perform(elasticClient *elastic.Client) {
 }
 
 // NewPlugin must be exported. The name should be exactly "NewMonitor" and returns an instance of the custommonitor
-func NewPlugin(config interface{}) monitor.Plugin {
+func NewPlugin(config interface{}) plugin.Plugin {
 	return &CounterPlugin{}
 }
 

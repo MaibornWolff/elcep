@@ -1,3 +1,5 @@
-Dockerfile
+examples
+
+*Dockerfile
 *.md
-examples/
+LICENSE

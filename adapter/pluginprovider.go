@@ -6,14 +6,15 @@ import (
 	"path/filepath"
 	"plugin"
 
-	"github.com/MaibornWolff/elcep/monitor"
+	pluginApi "github.com/MaibornWolff/elcep/plugin"
 )
 
+// PluginProvider loads the plugin files and scans for available plugins
 type PluginProvider struct {
-	Monitors map[string]func(interface{}) monitor.Plugin
+	Plugins map[string]func(interface{}) pluginApi.Plugin
 }
 
-//NewPluginProvider returns an instance with loaded LogMonitors from plugin Files
+// NewPluginProvider returns an instance with loaded Plugins from plugin Files
 func NewPluginProvider(pluginFolder string) *PluginProvider {
 	provider := &PluginProvider{}
 	files := findPlugins(pluginFolder)
@@ -21,10 +22,10 @@ func NewPluginProvider(pluginFolder string) *PluginProvider {
 	return provider
 }
 
-//GetPluginNames returns a list of logical plugin names
+// GetPluginNames returns a list of logical plugin names
 func (provider *PluginProvider) GetPluginNames() []string {
-	keys := make([]string, 0, len(provider.Monitors))
-	for k := range provider.Monitors {
+	keys := make([]string, 0, len(provider.Plugins))
+	for k := range provider.Plugins {
 		keys = append(keys, k)
 	}
 	return keys
@@ -45,7 +46,7 @@ func findPlugins(pluginFolder string) []string {
 }
 
 func (provider *PluginProvider) initializePlugins(fileNames []string) {
-	provider.Monitors = make(map[string]func(interface{}) monitor.Plugin)
+	provider.Plugins = make(map[string]func(interface{}) pluginApi.Plugin)
 	for _, file := range fileNames {
 		plug, err := plugin.Open(file)
 		if err != nil {
@@ -57,13 +58,14 @@ func (provider *PluginProvider) initializePlugins(fileNames []string) {
 			log.Fatal(err)
 		}
 
-		m, ok := sym.(func(interface{}) monitor.Plugin)
+		m, ok := sym.(func(interface{}) pluginApi.Plugin)
 		if !ok {
-			log.Fatal("unexpected type from module symbol NewPlugin. Expected `func(interface{}) monitor.Plugin`")
+			var expected func(interface{}) pluginApi.Plugin
+			log.Fatalf("unexpected type from module symbol NewPlugin. Expected `%T`", expected)
 		}
 
 		pluginName := getLogicalPluginName(file)
-		provider.Monitors[pluginName] = m
+		provider.Plugins[pluginName] = m
 	}
 }
 

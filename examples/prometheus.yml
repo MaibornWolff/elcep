@@ -1,14 +1,14 @@
-global: 
+global:
   scrape_interval: 5s
 
 scrape_configs:
-# prometheus monitors itself
-- job_name: prometheus
-  static_configs:
-    - targets: ['localhost:9090']
+  # prometheus monitors itself
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
 
-## local
-# local exception monitoring
-- job_name: elcep
-  static_configs:
-    - targets: ['elcep:8080']
+  ## local
+  # local exception monitoring
+  - job_name: elcep
+    static_configs:
+      - targets: ['elcep:8080']

@@ -6,9 +6,10 @@ import (
 	"net/url"
 	"time"
 
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
+// Options holds all the application configuration
 type Options struct {
 	Freq             time.Duration
 	ElasticsearchURL *url.URL
@@ -16,18 +17,22 @@ type Options struct {
 	Config           string
 	PluginDir        string
 	Path             string
-	TimeKey          string
+	// FIXME timekey not used anywhere
+	TimeKey string
 }
 
+// Configuration holds both the application config and the plugin configuration
 type Configuration struct {
 	Options Options
 	plugins map[string]*PluginConfig
 }
 
+// ForPlugin get the configuration for the plugin name
 func (conf *Configuration) ForPlugin(name string) *PluginConfig {
 	return conf.plugins[name]
 }
 
+// ReadConfig reads the configuration from the CLI options, the ENV vars and the config file
 func ReadConfig() Configuration {
 	options := parseCli()
 
@@ -45,7 +50,6 @@ func ReadConfig() Configuration {
 }
 
 func parseCli() Options {
-	// TODO check if duration without unit works
 	freq := kingpin.Flag("freq", "The elastic search polling interval").
 		Short('f').Default("30s").
 		Envar("ELCEP_POLL_FREQENCY").Duration()
@@ -68,10 +72,10 @@ func parseCli() Options {
 		Default("@timestamp").
 		Envar("ELCEP_TIME_KEY").String()
 
-	kingpin.CommandLine.HelpFlag.Short('h')
-	// TODO kingpin.CommandLine.VersionFlag.Short('v')
-	// Todo read during compilation (?)
+	// Todo read version during compilation: https://blog.alexellis.io/inject-build-time-vars-golang/
 	kingpin.Version("0.7") // elcep version
+	kingpin.CommandLine.HelpFlag.Short('h')
+	kingpin.CommandLine.VersionFlag.Short('v')
 	kingpin.Parse()
 
 	return Options{

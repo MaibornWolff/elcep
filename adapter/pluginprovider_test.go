@@ -3,7 +3,7 @@ package adapter
 import (
 	"testing"
 
-	assert "gopkg.in/go-playground/assert.v1"
+	"gopkg.in/go-playground/assert.v1"
 )
 
 func Test_Get_Logical_Plugin_Names(t *testing.T) {
@@ -13,4 +13,6 @@ func Test_Get_Logical_Plugin_Names(t *testing.T) {
 	result := getLogicalPluginName(file)
 
 	assert.Equal(t, result, expectedFile)
+
+	// TODO more tests
 }

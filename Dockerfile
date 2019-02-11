@@ -21,15 +21,15 @@ RUN go get -d -v -t ./...
 RUN go test -v ./...
 RUN go build -o elcep
 
-# build plugins
-WORKDIR /go/src/github.com/MaibornWolff/elcep/plugins
+# build shipped_plugins
+WORKDIR /go/src/github.com/MaibornWolff/elcep/shipped_plugins
 RUN for dir in */; do OUTPUT_DIR="$(pwd)" ./${dir}build.sh; done
 
 FROM alpine
 
 WORKDIR /app
 COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/elcep /app/
-COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/plugins/*.so /app/plugins/
+COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/shipped_plugins/*.so /app/plugins/
 COPY --from=build-env /go/src/github.com/MaibornWolff/elcep/conf/config.yaml /app/config.yaml
 
 ENTRYPOINT ["./elcep"]

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 type configurationFile struct {
@@ -16,7 +16,7 @@ type queryGroup map[string]queries
 
 type queries map[string]interface{}
 
-//PluginConfig the config struct for a plugin
+// PluginConfig the config struct for a plugin
 type PluginConfig struct {
 	Options interface{}
 	Queries []Query

@@ -7,7 +7,7 @@ import (
 
 	"github.com/MaibornWolff/elcep/adapter"
 	"github.com/MaibornWolff/elcep/config"
-	"github.com/MaibornWolff/elcep/monitor"
+	"github.com/MaibornWolff/elcep/plugin"
 	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -16,29 +16,29 @@ func main() {
 	configuration := config.ReadConfig()
 	executor := initExecutor(&configuration)
 
-	go executor.PerformMonitors(configuration.Options.Freq)
+	go executor.RunPlugins(configuration.Options.Freq)
 
 	http.Handle(configuration.Options.Path, promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(configuration.Options.Port), nil))
 }
 
-func initExecutor(configuration *config.Configuration) *monitor.Executor {
-	pluginProvider := adapter.NewPluginProvider("./plugins")
+func initExecutor(configuration *config.Configuration) *plugin.Executor {
+	pluginProvider := adapter.NewPluginProvider(configuration.Options.PluginDir)
 
 	client, err := elastic.NewClient(elastic.SetURL(configuration.Options.ElasticsearchURL.String()))
 	if err != nil {
 		log.Fatal(err)
 	}
-	executor := &monitor.Executor{
-		ElasticClient:  client,
+	executor := &plugin.Executor{
+		ElasticClient: client,
 	}
 
-	for name, newMon := range pluginProvider.Monitors {
+	for name, newMon := range pluginProvider.Plugins {
 		conf := configuration.ForPlugin(name)
 		if conf == nil {
 			log.Fatalf("Missing config for plugin %s\n", name)
 		}
-		executor.BuildMonitors(configuration.Options.TimeKey, *conf, newMon)
+		executor.BuildPlugins(*conf, newMon)
 	}
 
 	return executor
