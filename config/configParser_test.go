@@ -1,19 +1,38 @@
 package config
 
 import (
+	"gopkg.in/go-playground/assert.v1"
 	"testing"
 )
 
 func Test_Read_Queries_From_Files(t *testing.T) {
-	// FIXME tests
-	/*config := ReadConfig([]string{"Plugin1", "Plugin2"}, func(name string) io.ReadCloser {
-		return ioutil.NopCloser(bytes.NewReader([]byte("all_exceptions=log:exception\nall_npe=log:NullPointerException")))
-	})
+	config := parseConfigFile([]byte(configFile))
 
-	assert.Equal(t, len(config.byFile), 2)
-	assert.NotEqual(t, config.ForPlugin("Plugin1"), nil)
-	assert.NotEqual(t, config.ForPlugin("Plugin2"), nil)
+	assert.NotEqual(t, config["counter"], nil)
 
-	assert.Equal(t, config.ForPlugin("Plugin1")["all_exceptions"], "log:exception")
-	assert.Equal(t, config.ForPlugin("Plugin1")["all_npe"], "log:NullPointerException")*/
+	var counterConf *PluginConfig
+	counterConf = config["counter"]
+	assert.NotEqual(t, counterConf.Options, nil)
+	assert.Equal(t, counterConf.Options.(map[interface{}] interface{})["someOption"], "bla")
+
+	assert.Equal(t, len(counterConf.Queries), 4)
 }
+
+const configFile = `---
+Plugins:
+  # you can give configuration for the plugins here, if necessary
+  counter:
+    someOption: "bla"
+
+Metrics:
+  exceptions:
+    counter:
+      all: "log:exception"
+      npe:
+        query: "log:NullPointerException"
+  
+  images:
+    counter:
+      all: "log:image"
+      uploaded: "Receiving new image"
+`

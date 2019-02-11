@@ -8,8 +8,8 @@ import (
 )
 
 type configurationFile struct {
-	Plugins map[string]interface{}
-	Metrics map[string]queryGroup
+	Plugins map[string]interface{} `yaml:"Plugins"`
+	Metrics map[string]queryGroup  `yaml:"Metrics"`
 }
 
 type queryGroup map[string]queries
@@ -24,9 +24,9 @@ type PluginConfig struct {
 
 func parseConfigFile(fileContent []byte) (conf map[string]*PluginConfig) {
 	var configFile configurationFile
-	err := yaml.Unmarshal(fileContent, &configFile)
+	err := yaml.UnmarshalStrict(fileContent, &configFile)
 	if err != nil {
-		log.Fatalln("Could not parse config file")
+		log.Fatalf("Could not parse config file: %v\n", err)
 	}
 	fmt.Printf("--- Loaded yaml:\n%#v\n\n", configFile)
 
@@ -50,14 +50,15 @@ func parseConfigFile(fileContent []byte) (conf map[string]*PluginConfig) {
 						log.Fatalf("Query is invalid: %#v\n", q)
 					}
 					pluginConf.Queries = append(pluginConf.Queries, q)
-				} else if queryMap, ok := query.(Query); ok {
-					if _, ok := queryMap["Name"]; !ok {
-						queryMap["Name"] = name
+				} else if queryMap, ok := query.(map[interface{}]interface{}); ok {
+					if qObj, ok := queryMap["query"]; !ok {
+						log.Fatalln("Plugin Config for plugin ", pluginName, " is not valid, missing 'Query' for ", name)
+					} else if qString, ok := qObj.(string); !ok {
+						log.Fatalln("Plugin Config for plugin ", pluginName, " is not valid, 'Query' must be a string.")
+					} else {
+						q := CreateQuery(name, qString)
+						pluginConf.Queries = append(pluginConf.Queries, q)
 					}
-					if !queryMap.isValid() {
-						log.Fatalln("Plugin Config for plugin ", pluginName, " is not valid, missing 'Query' or 'Name' of type string")
-					}
-					pluginConf.Queries = append(pluginConf.Queries, queryMap)
 				} else {
 					log.Fatalln("Plugin Config for plugin ", pluginName, " is of wrong type")
 				}
