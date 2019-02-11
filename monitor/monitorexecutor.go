@@ -14,7 +14,6 @@ import (
 //Executor for controlling LogMonitor instances
 type Executor struct {
 	Plugins        []Plugin
-	QueryExecution func(string) (*Hits, error)
 	ElasticClient  *elastic.Client
 }
 

@@ -25,16 +25,11 @@ func main() {
 func initExecutor(configuration *config.Configuration) *monitor.Executor {
 	pluginProvider := adapter.NewPluginProvider("./plugins")
 
-	elProvider := &adapter.ElasticSearchProvider{
-		URL: configuration.Options.ElasticsearchURL,
-	}
 	client, err := elastic.NewClient(elastic.SetURL(configuration.Options.ElasticsearchURL.String()))
 	if err != nil {
 		log.Fatal(err)
 	}
 	executor := &monitor.Executor{
-		// TODO remove elProvider (?)
-		QueryExecution: elProvider.ExecRequest,
 		ElasticClient:  client,
 	}
 

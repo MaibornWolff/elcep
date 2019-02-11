@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/olivere/elastic"
@@ -80,21 +79,17 @@ func (logMon *LogCounterMonitor) Perform(elasticClient *elastic.Client) {
 
 func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client) (increment float64, duration float64) {
 	start := time.Now()
-
-	body := strings.Replace(queryTemplate, "<timestamp>", startupTime.Format("2006-01-02 15:04:05"), 1)
-	body = strings.Replace(body, "<time-key>", "@timestamp", 1)
-	body = strings.Replace(body, "<query>", logMon.query.QueryText(), 1)
-
-
-	/*query := elastic.NewBoolQuery().
-		Must(elastic.NewSimpleQueryStringQuery(logMon.query.QueryText())).
-		Filter(elastic.NewRangeQuery("<time-key>").Gte(startupTime.Format("2006-01-02 15:04:05")).Format("yyyy-MM-dd HH:mm:ss"))
-	response, err := elasticClient.Search().Query(query).Do(context.Background())*/
-	response, err := elasticClient.Search().Source(body).Do(context.Background())
+	query := elastic.NewBoolQuery().
+		Must(elastic.
+			NewQueryStringQuery(logMon.query.QueryText())).
+		Filter(elastic.
+			NewRangeQuery("@timestamp").
+			Gte(startupTime.Format("2006-01-02 15:04:05")).
+			Format("yyyy-MM-dd HH:mm:ss"))
+	response, err := elasticClient.Search().Query(query).Do(context.Background())
 	duration = time.Now().Sub(start).Seconds()
 
 	if err == nil {
-		log.Printf("Query successful: %v\n", response.Hits)
 		increment = float64(response.Hits.TotalHits) - *logMon.LastCount
 		*logMon.LastCount += increment
 	} else {
@@ -103,28 +98,5 @@ func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client) (increm
 	}
 	return
 }
-
-
-
-const queryTemplate = `{
-  "query": {
-    "bool": {
-      "must": {
-        "query_string": {
-          "query": "<query>"
-        }
-      },
-      "filter": {
-        "range": {
-          "<time-key>": {
-            "gte": "<timestamp>",
-            "format": "yyyy-MM-dd HH:mm:ss"
-          }
-        }
-      }
-    }
-  },
-  "size": 0
-}`
 
 func main() {}

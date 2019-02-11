@@ -1,7 +1,7 @@
 version: '3'
 services:
 
-# search engine, storage
+  # search engine, storage
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.1.1
     ports:
@@ -14,11 +14,12 @@ services:
     command: "--url http://elasticsearch:9200"
     ports:
       - 8080:8080
+      - 14500:14500 # wireshark
     # wait for elasticsearch
     restart: on-failure
 
 
-# logs visualizer
+  # logs visualizer
   kibana:
     image: docker.elastic.co/kibana/kibana:6.1.1
     depends_on:
@@ -29,7 +30,7 @@ services:
       # this is default, so not strictly necessary
       ELASTICSEARCH_URL: http://elasticsearch:9200
 
-# metrics collector
+  # metrics collector
   prometheus:
     image: prom/prometheus:v2.4.0
     depends_on:
@@ -39,8 +40,16 @@ services:
     ports:
       - 9090:9090
 
-# log dummy data
+  # log dummy data
   log-generator:
     build: ./log-generator
     depends_on:
       - elasticsearch
+
+  # network sniffer (if needed)
+#  wireshark:
+#    image: ffeldhaus/wireshark
+#    container_name: wireshark
+#    restart: always
+#    privileged: true
+#    network_mode: "service:elcep"
