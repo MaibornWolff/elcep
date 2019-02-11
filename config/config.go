@@ -64,10 +64,10 @@ func parseCli() Options {
 	pluginDir := kingpin.Flag("plugin-dir", "Directory containing all the plugins").
 		Default("plugins").
 		Envar("ELCEP_PLUGIN_DIR").ExistingDir()
-	path := kingpin.Flag("path", "The port to listen on for HTTP requests").
+	path := kingpin.Flag("path", "The resource path for the prometheus endpoint").
 		Default("/metrics").
 		Envar("ELCEP_METRICS_ENDPOINT").String()
-	timekey := kingpin.Flag("timekey", "The port to listen on for HTTP requests").
+	timekey := kingpin.Flag("time-key", "The timekey to use for the elasticsearch queries").
 		Default("@timestamp").
 		Envar("ELCEP_TIME_KEY").String()
 

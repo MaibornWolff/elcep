@@ -46,7 +46,7 @@ services:
     depends_on:
       - elasticsearch
 
-  # network sniffer (if needed)
+#  # network sniffer (uncomment if needed)
 #  wireshark:
 #    image: ffeldhaus/wireshark
 #    container_name: wireshark
