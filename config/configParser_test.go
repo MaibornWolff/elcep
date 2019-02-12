@@ -19,12 +19,12 @@ func Test_Read_Queries_From_Files(t *testing.T) {
 }
 
 const configFile = `---
-Plugins:
+plugins:
   # you can give configuration for the plugins here, if necessary
   counter:
     someOption: "bla"
 
-Metrics:
+metrics:
   exceptions:
     counter:
       all: "log:exception"

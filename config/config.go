@@ -60,7 +60,7 @@ func parseCli() Options {
 		Short('p').Default("8080").
 		Envar("ELCEP_PORT").Int()
 	config := kingpin.Flag("config", "Location of the config file").
-		Short('c').Default("config.yaml").
+		Short('c').Default("config.yml").
 		Envar("ELCEP_CONFIG").ExistingFile()
 	pluginDir := kingpin.Flag("plugin-dir", "Directory containing all the plugins").
 		Default("plugins").

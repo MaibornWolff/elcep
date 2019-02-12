@@ -10,11 +10,12 @@ import (
 
 const factoryMethodName = "NewPlugin"
 
-type FactoryMethodType func(config.Options, interface{}) Plugin
+// this is simply a type alias. This is not a new type!
+type factoryMethodType = func(config.Options, interface{}) Plugin
 
 // Provider loads the plugin files and scans for available plugins
 type Provider struct {
-	Plugins map[string]FactoryMethodType
+	Plugins map[string]factoryMethodType
 }
 
 // NewPluginProvider returns an instance with loaded Plugins from plugin Files
@@ -49,7 +50,7 @@ func findPlugins(pluginFolder string) []string {
 }
 
 func (provider *Provider) initializePlugins(fileNames []string) {
-	provider.Plugins = make(map[string]FactoryMethodType)
+	provider.Plugins = make(map[string]factoryMethodType)
 	for _, file := range fileNames {
 		plug, err := plugin.Open(file)
 		if err != nil {
@@ -61,9 +62,9 @@ func (provider *Provider) initializePlugins(fileNames []string) {
 			log.Fatalf("%s: Could not find symbol '%s': %s\n", file, factoryMethodName, err)
 		}
 
-		m, ok := sym.(FactoryMethodType)
+		m, ok := sym.(factoryMethodType)
 		if !ok {
-			var expected FactoryMethodType
+			var expected factoryMethodType
 			log.Fatalf("%s: unexpected type from module symbol %s. Expected `%T`", file, factoryMethodName, expected)
 		}
 

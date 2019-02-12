@@ -22,7 +22,7 @@ ELCEP accepts the following arguments:
 -u, --url=http://elasticsearch:9200
                             The elastic search endpoint
 -p, --port=8080             The port to listen on for HTTP requests
--c, --config=config.yaml    Location of the config file
+-c, --config=config.yml     Location of the config file
     --plugin-dir=plugins    Directory containing all the plugins
     --path="/metrics"       The resource path for the prometheus endpoint
     --timekey="@timestamp"  The timekey to use for the elasticsearch queries
@@ -36,12 +36,12 @@ These arguments can also be set via environment variables:
 | `ELCEP_POLL_FREQUENCY` | `--freq`   | `-f`        | 30s             |
 | `ELCEP_ELASTIC_URL`    | `--url`    | `-u`        | http://elasticsearch:9200 |
 | `ELCEP_PORT`           | `--port`   | `-p`        | 8080            |
-| `ELCEP_CONFIG`         | `--config` | `-c`        | config.yaml     |
+| `ELCEP_CONFIG`         | `--config` | `-c`        | config.yml      |
 | `ELCEP_PLUGIN_DIR`     | `--plugin-dir` | N/A     | plugins         |
 | `ELCEP_METRICS_ENDPOINT` | `--path` | N/A         | /metrics        |
 | `ELCEP_TIME_KEY`       | `--time-key` | N/A       | @timestamp      |
 
-To configure the metrics, use the config file (`config.yaml`). It has the following structure:
+To configure the metrics, use the config file (`config.yml`). It has the following structure:
 
 ```yaml
 Plugins:

@@ -3,20 +3,16 @@ plugins:
     enabled: true
 
 metrics:
-  #- counter:
-  #    all: ""
-  #    npe:
-  #      query: ""
-  #- bucket:
-  #    bla: ""
-
-  #- counter:
-  #    all: ""
-
   exceptions:
     counter:
       all: "log:exception"
       npe: "log:NullPointerException"
+    bucket:
+      access:
+        query: "log:*"
+        buckets:
+          - "bucket 1"
+          - "bucket 2"
 
   socket:
     counter:

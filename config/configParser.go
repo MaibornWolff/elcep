@@ -1,15 +1,14 @@
 package config
 
 import (
-	"fmt"
 	"log"
 
 	"gopkg.in/yaml.v2"
 )
 
 type configurationFile struct {
-	Plugins map[string]interface{} `yaml:"Plugins"`
-	Metrics map[string]queryGroup  `yaml:"Metrics"`
+	Plugins map[string]interface{} `yaml:"plugins"`
+	Metrics map[string]queryGroup  `yaml:"metrics"`
 }
 
 type queryGroup map[string]queries
@@ -28,7 +27,6 @@ func parseConfigFile(fileContent []byte) (conf map[string]*PluginConfig) {
 	if err != nil {
 		log.Fatalf("Could not parse config file: %v\n", err)
 	}
-	fmt.Printf("--- Loaded yaml:\n%#v\n\n", configFile)
 
 	conf = make(map[string]*PluginConfig)
 	for pluginName, pluginConf := range configFile.Plugins {

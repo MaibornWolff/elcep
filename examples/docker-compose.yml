@@ -21,7 +21,7 @@ services:
       - 8080:8080
       - 14500:14500 # wireshark
     volumes:
-      - ./elcep.yaml:/app/config.yaml
+      - ./elcep.yml:/app/config.yml
 
 
   # logs visualizer
