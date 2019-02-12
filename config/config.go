@@ -1,3 +1,4 @@
+// This package handles all the configuration things.
 package config
 
 import (

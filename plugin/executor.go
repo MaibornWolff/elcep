@@ -18,7 +18,7 @@ type Executor struct {
 }
 
 // BuildPlugins creates the plugin instances
-func (executor *Executor) BuildPlugins(configuration config.Configuration, pluginConfig config.PluginConfig, newPlugin func(config.Options, interface{}) Plugin) {
+func (executor *Executor) BuildPlugins(configuration config.Configuration, pluginConfig config.PluginConfig, newPlugin FactoryMethodType) {
 	plugin := newPlugin(configuration.Options, pluginConfig.Options)
 	metrics := plugin.BuildMetrics(pluginConfig.Queries)
 	executor.register(metrics)

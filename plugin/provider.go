@@ -8,9 +8,13 @@ import (
 	"plugin"
 )
 
+const factoryMethodName = "NewPlugin"
+
+type FactoryMethodType func(config.Options, interface{}) Plugin
+
 // Provider loads the plugin files and scans for available plugins
 type Provider struct {
-	Plugins map[string]func(config.Options, interface{}) Plugin
+	Plugins map[string]FactoryMethodType
 }
 
 // NewPluginProvider returns an instance with loaded Plugins from plugin Files
@@ -45,22 +49,22 @@ func findPlugins(pluginFolder string) []string {
 }
 
 func (provider *Provider) initializePlugins(fileNames []string) {
-	provider.Plugins = make(map[string]func(config.Options, interface{}) Plugin)
+	provider.Plugins = make(map[string]FactoryMethodType)
 	for _, file := range fileNames {
 		plug, err := plugin.Open(file)
 		if err != nil {
 			log.Fatalf("%s: os.Open(): %s\n", file, err)
 		}
 
-		sym, err := plug.Lookup("NewPlugin")
+		sym, err := plug.Lookup(factoryMethodName)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("%s: Could not find symbol '%s': %s\n", file, factoryMethodName, err)
 		}
 
-		m, ok := sym.(func(config.Options, interface{}) Plugin)
+		m, ok := sym.(FactoryMethodType)
 		if !ok {
-			var expected func(config.Options, interface{}) Plugin
-			log.Fatalf("unexpected type from module symbol NewPlugin. Expected `%T`", expected)
+			var expected FactoryMethodType
+			log.Fatalf("%s: unexpected type from module symbol %s. Expected `%T`", file, factoryMethodName, expected)
 		}
 
 		pluginName := getLogicalPluginName(file)

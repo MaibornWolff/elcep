@@ -1,6 +1,9 @@
 ELCEP - Elastic Log Counter Exporter for Prometheus
 ===================================================
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/MaibornWolff/elcep)](https://goreportcard.com/report/github.com/MaibornWolff/elcep)
+[![Release](https://img.shields.io/github/release/MaibornWolff/elcep.svg?style=flat-square)](https://github.com/MaibornWolff/elcep/releases/latest)
+
 ## What does it do?
 ELCEP is a small go service which provides prometheus metrics based on custom lucene queries to an elastic search instance.
 
