@@ -55,6 +55,11 @@ func parseConfigFile(fileContent []byte) (conf map[string]*PluginConfig) {
 						log.Fatalln("Plugin Config for plugin ", pluginName, " is not valid, 'Query' must be a string.")
 					} else {
 						q := CreateQuery(name, qString)
+						for key,value := range queryMap {
+							if key != "query" {
+								q[key.(string)] = value
+							}
+						}
 						pluginConf.Queries = append(pluginConf.Queries, q)
 					}
 				} else {
