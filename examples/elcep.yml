@@ -1,6 +1,7 @@
 plugins:
   counter:
     enabled: true
+  bucket: true
 
 metrics:
   exceptions:
@@ -8,11 +9,10 @@ metrics:
       all: "log:exception"
       npe: "log:NullPointerException"
     bucket:
-      access:
+      by_type:
         query: "log:*"
-        buckets:
-          - "bucket 1"
-          - "bucket 2"
+        aggregations:
+          type: "_type"
 
   socket:
     counter:
