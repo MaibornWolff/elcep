@@ -17,7 +17,7 @@ var startupTime = time.Now()
 type LogCounterMonitor struct {
 	gauge     prometheus.Gauge
 	query     config.Query
-	LastCount *float64
+	LastCount *int64
 	metrics   struct {
 		matchCounter         prometheus.Counter
 		rpcDurationHistogram prometheus.Histogram
@@ -57,7 +57,7 @@ func NewPlugin(options config.Options, _ interface{}) plugin.Plugin {
 
 // BuildMetrics must exist and return a list of prometheus metrics instances
 func (logMon *LogCounterMonitor) BuildMetrics(query config.Query) []prometheus.Collector {
-	logMon.LastCount = new(float64)
+	logMon.LastCount = new(int64)
 	logMon.query = query
 
 	logMon.metrics.matchCounter = prometheus.NewCounter(prometheus.CounterOpts{
@@ -77,10 +77,10 @@ func (logMon *LogCounterMonitor) BuildMetrics(query config.Query) []prometheus.C
 func (logMon *LogCounterMonitor) Perform(elasticClient *elastic.Client, timeKey string) {
 	increment, duration := logMon.runQuery(elasticClient, timeKey)
 	logMon.metrics.rpcDurationHistogram.Observe(duration)
-	logMon.metrics.matchCounter.Add(increment)
+	logMon.metrics.matchCounter.Add(float64(increment))
 }
 
-func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client, timeKey string) (increment float64, duration float64) {
+func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client, timeKey string) (increment int64, duration float64) {
 	start := time.Now()
 	query := elastic.NewBoolQuery().
 		Must(elastic.
@@ -93,8 +93,11 @@ func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client, timeKey
 	duration = time.Now().Sub(start).Seconds()
 
 	if err == nil {
-		increment = float64(response.Hits.TotalHits) - *logMon.LastCount
-		*logMon.LastCount += increment
+		increment = response.Hits.TotalHits - *logMon.LastCount
+		if increment < 0 {
+			increment = 0
+		}
+		*logMon.LastCount = response.Hits.TotalHits
 	} else {
 		log.Printf("Error on query: %#v\n", err)
 		increment = 0
