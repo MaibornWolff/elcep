@@ -15,7 +15,6 @@ var startupTime = time.Now()
 
 // LogCounterMonitor is a monitor for a certain query and exports both a Counter and a Histogram to Prometheus
 type LogCounterMonitor struct {
-	gauge     prometheus.Gauge
 	query     config.Query
 	LastCount *int64
 	metrics   struct {
