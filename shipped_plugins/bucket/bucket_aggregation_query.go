@@ -7,40 +7,59 @@ import (
 )
 
 type BucketAggregationQuery struct {
-	name         string;
-	query        string;
-	aggregations map[string]string;
+	name         string
+	query        string
+	aggregations []string
 }
 
 func Create(query config.Query) *BucketAggregationQuery {
-	aggregations := make(map[string] string)
+	aggregations := make([]string, 0, 4)
 
-	if queryAggs, ok := query["aggregations"]; !ok {
+	if aggregationConfig, ok := query["aggregations"]; !ok {
 		log.Fatalf("Malformed query %v, missing 'aggregations'\n", query)
-	} else if queryAggMap, ok := queryAggs.(map[interface{}] interface{}); !ok {
-		log.Fatalf("Malformed query %v, 'aggregations' should be of type %T\n", query, queryAggMap)
+	} else if aggregationSlice, ok := aggregationConfig.([] interface{}); !ok {
+		log.Fatalf("Malformed query %v, 'aggregations' should be of type %T\n", query, aggregationSlice)
 	} else {
-		for _name, _field := range queryAggMap {
-			name, ok1 := _name.(string)
+		for _, _field := range aggregationSlice {
 			field, ok2 := _field.(string)
-			if !ok1 || !ok2 {
-				log.Fatalf("Malformed query %v, %s and %s should be strings", query, _name, _field)
+			if !ok2 {
+				log.Fatalf("Malformed query %v, %s should be a string", query, _field)
 			}
-			aggregations[name] = field
+			aggregations = append(aggregations, field)
 		}
 	}
 
 	return &BucketAggregationQuery{
-		name: query.Name(),
-		query: query.QueryText(),
+		name:         query.Name(),
+		query:        query.QueryText(),
 		aggregations: aggregations,
 	}
 }
 
 func (query *BucketAggregationQuery) build(elasticClient *elastic.Client) *elastic.SearchService {
 	service := elasticClient.Search().Query(elastic.NewBoolQuery())
-	for aggregationName, aggregationField := range query.aggregations {
-		service = service.Aggregation(aggregationName, elastic.NewTermsAggregation().Field(aggregationField))
+	if len(query.aggregations) > 0 {
+		service = service.Aggregation(createAggregations(query.aggregations))
 	}
 	return service
+}
+
+func createAggregations(aggregationKeys []string) (string, elastic.Aggregation) {
+	switch len(aggregationKeys) {
+	case 0:
+		log.Panicf("Cannot create aggregation without aggregation keys")
+	case 1:
+		return aggregationKeys[0], elastic.NewTermsAggregation().Field(aggregationKeys[0])
+	default:
+		return aggregationKeys[0], elastic.NewTermsAggregation().Field(aggregationKeys[0]).SubAggregation(createAggregations(aggregationKeys[1:]))
+	}
+
+	if len(aggregationKeys) == 0 {
+		log.Panicf("")
+	}
+	aggregation := elastic.NewTermsAggregation().Field(aggregationKeys[0])
+	if len(aggregationKeys) > 1 {
+		aggregation = aggregation.SubAggregation(createAggregations(aggregationKeys[1:]))
+	}
+	return aggregationKeys[0], aggregation
 }

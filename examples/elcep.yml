@@ -12,7 +12,8 @@ metrics:
       by_type:
         query: "log:*"
         aggregations:
-          type: "_type"
+          - "_type"
+          - "_id"
 
   socket:
     counter:
