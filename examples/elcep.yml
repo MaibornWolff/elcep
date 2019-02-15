@@ -1,0 +1,31 @@
+plugins:
+  counter:
+    enabled: true
+
+metrics:
+  exceptions:
+    counter:
+      all: "log:exception"
+      npe: "log:NullPointerException"
+    bucket:
+      access:
+        query: "log:*"
+        buckets:
+          - "bucket 1"
+          - "bucket 2"
+
+  socket:
+    counter:
+      all: "log:socket"
+    
+  images:
+    counter:
+      all: "log:image"
+      uploaded: "Receiving new image"
+  
+  mongodb:
+    counter:
+      all_connection: "log:connection accepted from AND container_name:application_mongodb_1"
+
+
+  

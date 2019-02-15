@@ -1,3 +1,7 @@
 # idea
 *.iml
 .idea
+
+# binary files
+*.so
+*.exe

@@ -5,54 +5,40 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/MaibornWolff/elcep/adapter"
-	"github.com/MaibornWolff/elcep/monitor"
+	"github.com/MaibornWolff/elcep/config"
+	"github.com/MaibornWolff/elcep/plugin"
+	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"time"
 )
 
-var startup_time = time.Now()
-
 func main() {
-	cmdlineProvider := &adapter.CommandLineOptionProvider{
-		Options: adapter.CommandLineOption{
-			Freq:                   30,
-			ElasticsearchURL:       "http://elasticsearch:9200",
-			Port:                   8080,
-			Path:                   "/metrics",
-			ElasticsearchQueryFile: "./conf/queries.cfg",
-			TimeKey:                "@timestamp",
-		},
-	}
-	cmdlineProvider.ReadCmdLineOptions()
-	cmdlineProvider.PrintCmdLineOptions()
+	configuration := config.ReadConfig()
+	executor := initExecutor(&configuration)
 
-	elProvider := &adapter.ElasticSearchProvider{
-		URL: cmdlineProvider.Options.ElasticsearchURL,
-	}
+	go executor.RunPlugins(configuration.Options.Freq)
 
-	pluginProvider := adapter.NewPluginProvider("./plugins")
-
-	executor := &monitor.Executor{}
-	queryProvider := adapter.NewQueryProvider(cmdlineProvider.Options.ElasticsearchQueryFile, pluginProvider.GetPluginNames())
-
-	executor.QueryExecution = elProvider.ExecRequest
-	queryProvider.Print()
-
-	buildAllMonitors(executor, pluginProvider, queryProvider, cmdlineProvider)
-
-	go executor.PerformMonitors(cmdlineProvider.Options.Freq)
-
-	http.Handle(cmdlineProvider.Options.Path, promhttp.Handler())
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(cmdlineProvider.Options.Port), nil))
+	http.Handle(configuration.Options.Path, promhttp.Handler())
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(configuration.Options.Port), nil))
 }
 
-func buildAllMonitors(executor *monitor.Executor, pluginProvider *adapter.PluginProvider, queryProvider *adapter.QueryProvider, cmdlineProvider *adapter.CommandLineOptionProvider) {
-	executor.BuildMonitors(cmdlineProvider.Options.TimeKey, queryProvider.QuerySets["default"].Queries, func() monitor.LogMonitor {
-		return &LogCounterMonitor{}
-	})
+func initExecutor(configuration *config.Configuration) *plugin.Executor {
+	pluginProvider := plugin.NewPluginProvider(configuration.Options.PluginDir)
 
-	for name, newMon := range pluginProvider.Monitors {
-		executor.BuildMonitors(cmdlineProvider.Options.TimeKey, queryProvider.QuerySets[name].Queries, newMon)
+	client, err := elastic.NewClient(elastic.SetURL(configuration.Options.ElasticsearchURL.String()))
+	if err != nil {
+		log.Fatal(err)
 	}
+	executor := &plugin.Executor{
+		ElasticClient: client,
+	}
+
+	for name, newMon := range pluginProvider.Plugins {
+		conf := configuration.ForPlugin(name)
+		if conf == nil {
+			log.Fatalf("Missing config for plugin %s\n", name)
+		}
+		executor.BuildPlugins(*configuration, *conf, newMon)
+	}
+
+	return executor
 }
