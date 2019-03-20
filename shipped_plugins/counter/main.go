@@ -88,15 +88,15 @@ func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client, timeKey
 			NewRangeQuery(timeKey).
 			Gte(startupTime.Format("2006-01-02 15:04:05")).
 			Format("yyyy-MM-dd HH:mm:ss"))
-	response, err := elasticClient.Search().Query(query).Do(context.Background())
+	count, err := elasticClient.Count().Query(query).Do(context.Background())
 	duration = time.Now().Sub(start).Seconds()
 
 	if err == nil {
-		increment = response.Hits.TotalHits - *logMon.LastCount
+		increment = count - *logMon.LastCount
 		if increment < 0 {
 			increment = 0
 		}
-		*logMon.LastCount = response.Hits.TotalHits
+		*logMon.LastCount = count
 	} else {
 		log.Printf("Error on query: %#v\n", err)
 		increment = 0
