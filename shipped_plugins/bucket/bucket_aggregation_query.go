@@ -48,18 +48,11 @@ func createAggregations(aggregationKeys []string) (string, elastic.Aggregation) 
 	switch len(aggregationKeys) {
 	case 0:
 		log.Panicf("Cannot create aggregation without aggregation keys")
+		return "", nil
 	case 1:
 		return aggregationKeys[0], elastic.NewTermsAggregation().Field(aggregationKeys[0])
 	default:
-		return aggregationKeys[0], elastic.NewTermsAggregation().Field(aggregationKeys[0]).SubAggregation(createAggregations(aggregationKeys[1:]))
+		return aggregationKeys[0], elastic.NewTermsAggregation().Field(aggregationKeys[0]).
+			SubAggregation(createAggregations(aggregationKeys[1:]))
 	}
-
-	if len(aggregationKeys) == 0 {
-		log.Panicf("")
-	}
-	aggregation := elastic.NewTermsAggregation().Field(aggregationKeys[0])
-	if len(aggregationKeys) > 1 {
-		aggregation = aggregation.SubAggregation(createAggregations(aggregationKeys[1:]))
-	}
-	return aggregationKeys[0], aggregation
 }

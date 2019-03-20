@@ -5,6 +5,7 @@ import (
 	"github.com/MaibornWolff/elcep/plugin"
 	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus"
+	"log"
 )
 
 // The factory method for the plugin
@@ -23,6 +24,7 @@ type BucketAggregationPlugin struct {
 
 func (plugin *BucketAggregationPlugin) BuildMetrics(queries []config.Query) []prometheus.Collector {
 	for _, query := range queries {
+		log.Printf("Query loaded: %#v\n", query)
 		monitor := NewAggregationMonitor(Create(query))
 		plugin.monitors = append(plugin.monitors, monitor)
 		plugin.collectors = append(plugin.collectors, monitor.counter)

@@ -8,12 +8,13 @@ metrics:
     counter:
       all: "log:exception"
       npe: "log:NullPointerException"
+      allbckt: "log:exception AND bucket:true"
     bucket:
       by_type:
-        query: "log:*"
+        query: "log:exception AND bucket:true"
         aggregations:
-          - "_type"
-          - "_id"
+          - "key1"
+          - "key2"
 
   socket:
     counter:

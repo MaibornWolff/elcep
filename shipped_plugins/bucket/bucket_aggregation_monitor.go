@@ -48,7 +48,7 @@ func (monitor *BucketAggregationMonitor) processResponse(response *elastic.Searc
 				monitor.processBuckets(
 					bucket,
 					expectedAggregations[1:],
-					withLabel(prometheus.Labels{}, expectedAggregations[0], bucket.Key.(string)))
+					withLabel(prometheus.Labels{}, expectedAggregations[0], fmt.Sprintf("%v", bucket.Key)))
 			}
 		}
 	} else {
@@ -56,7 +56,8 @@ func (monitor *BucketAggregationMonitor) processResponse(response *elastic.Searc
 		if err != nil {
 			fmt.Printf("Could not get counter with labels: %s\n", err)
 		} else {
-			counter.Add(monitor.getInc(response.Hits.TotalHits, prometheus.Labels{}))
+			inc := monitor.getInc(response.Hits.TotalHits, prometheus.Labels{})
+			counter.Add(inc)
 		}
 	}
 }
@@ -66,12 +67,14 @@ func (monitor *BucketAggregationMonitor) processBuckets(container *elastic.Aggre
 		counter, err := monitor.counter.GetMetricWith(labels)
 		if err != nil {
 			log.Printf("Error getting the labeled counter: %s\n", err)
+		} else {
+			inc := monitor.getInc(container.DocCount, labels)
+			counter.Add(inc)
 		}
-		counter.Add(monitor.getInc(container.DocCount, labels))
 	} else {
 		buckets, _ := container.Terms(expectedAggregations[0])
 		for _, bucket := range buckets.Buckets {
-			monitor.processBuckets(bucket, expectedAggregations[1:], withLabel(labels, expectedAggregations[0], bucket.Key.(string)))
+			monitor.processBuckets(bucket, expectedAggregations[1:], withLabel(labels, expectedAggregations[0], fmt.Sprintf("%v", bucket.Key)))
 		}
 	}
 }
@@ -89,14 +92,14 @@ func withLabel(labels prometheus.Labels, key string, value string) prometheus.La
 func (monitor *BucketAggregationMonitor) getInc(value int64, labels prometheus.Labels) float64 {
 	key := ""
 
-	for k,v := range labels {
+	for k, v := range labels {
 		key = fmt.Sprintf("%s,%s=%s", key, k, v)
 	}
 
 	lastVal, ok := monitor.cache[key]
 	monitor.cache[key] = value
 	if ok {
-		return math.Max(0, float64(value - lastVal))
+		return math.Max(0, float64(value-lastVal))
 	} else {
 		return float64(value)
 	}
