@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"math"
+	"strings"
 )
 
 type BucketAggregationMonitor struct {
@@ -16,66 +17,49 @@ type BucketAggregationMonitor struct {
 }
 
 func NewAggregationMonitor(query *BucketAggregationQuery) BucketAggregationMonitor {
-	counter := prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "elcep_logs_matched_" + query.name + "_buckets",
-		Help: "Aggregates logs matching " + query.query + " to buckets",
-	}, query.aggregations)
 	return BucketAggregationMonitor{
-		cache:   make(map[string]int64),
-		counter: counter,
-		query:   query,
+		cache: make(map[string]int64),
+		counter: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "elcep_logs_matched_" + query.name + "_buckets",
+			Help: "Aggregates logs matching " + query.query + " to buckets",
+		}, query.aggregations),
+		query: query,
 	}
 }
 
 func (monitor *BucketAggregationMonitor) Perform(client *elastic.Client) {
-	response, err := monitor.query.build(client).Do(context.Background())
-	if err != nil {
+	if response, err := monitor.query.build(client).Do(context.Background()); err != nil {
 		log.Printf("Elastic Query for %s failed: %v\n", monitor.query.name, err)
-		return
+	} else {
+		monitor.processAggregations(
+			&response.Aggregations, monitor.query.aggregations, prometheus.Labels{}, response.Hits.TotalHits)
 	}
-	monitor.processResponse(response)
-	return
 }
 
-func (monitor *BucketAggregationMonitor) processResponse(response *elastic.SearchResult) {
-	expectedAggregations := monitor.query.aggregations
+func (monitor *BucketAggregationMonitor) processAggregations(
+	container *elastic.Aggregations, expectedAggregations []string, labels prometheus.Labels, hits int64) {
 	if len(expectedAggregations) > 0 {
-		buckets, ok := response.Aggregations.Terms(expectedAggregations[0])
-		if !ok {
-			fmt.Printf("Missing terms aggregation %s in response %v\n", expectedAggregations[0], response)
+		if buckets, ok := container.Terms(expectedAggregations[0]); !ok {
+			fmt.Printf("Missing terms aggregation %s in response %v\n", expectedAggregations[0], container)
 		} else {
 			for _, bucket := range buckets.Buckets {
-				monitor.processBuckets(
-					bucket,
+				monitor.processAggregations(
+					&bucket.Aggregations,
 					expectedAggregations[1:],
-					withLabel(prometheus.Labels{}, expectedAggregations[0], fmt.Sprintf("%v", bucket.Key)))
+					withLabel(labels, expectedAggregations[0], fmt.Sprintf("%v", bucket.Key)),
+					bucket.DocCount)
 			}
 		}
 	} else {
-		counter, err := monitor.counter.GetMetricWith(prometheus.Labels{})
-		if err != nil {
-			fmt.Printf("Could not get counter with labels: %s\n", err)
-		} else {
-			inc := monitor.getInc(response.Hits.TotalHits, prometheus.Labels{})
-			counter.Add(inc)
-		}
+		monitor.updateCounter(hits, labels)
 	}
 }
 
-func (monitor *BucketAggregationMonitor) processBuckets(container *elastic.AggregationBucketKeyItem, expectedAggregations []string, labels prometheus.Labels) {
-	if len(expectedAggregations) == 0 {
-		counter, err := monitor.counter.GetMetricWith(labels)
-		if err != nil {
-			log.Printf("Error getting the labeled counter: %s\n", err)
-		} else {
-			inc := monitor.getInc(container.DocCount, labels)
-			counter.Add(inc)
-		}
+func (monitor *BucketAggregationMonitor) updateCounter(newCount int64, labels prometheus.Labels) {
+	if counter, err := monitor.counter.GetMetricWith(labels); err != nil {
+		log.Printf("Error getting the labeled counter: %s\n", err)
 	} else {
-		buckets, _ := container.Terms(expectedAggregations[0])
-		for _, bucket := range buckets.Buckets {
-			monitor.processBuckets(bucket, expectedAggregations[1:], withLabel(labels, expectedAggregations[0], fmt.Sprintf("%v", bucket.Key)))
-		}
+		counter.Add(monitor.getInc(newCount, labels))
 	}
 }
 
@@ -90,11 +74,11 @@ func withLabel(labels prometheus.Labels, key string, value string) prometheus.La
 }
 
 func (monitor *BucketAggregationMonitor) getInc(value int64, labels prometheus.Labels) float64 {
-	key := ""
-
-	for k, v := range labels {
-		key = fmt.Sprintf("%s,%s=%s", key, k, v)
+	keys := make([]string, len(labels))
+	for i, bucket := range monitor.query.aggregations {
+		keys[i] = labels[bucket]
 	}
+	key := strings.Join(keys, "|")
 
 	lastVal, ok := monitor.cache[key]
 	monitor.cache[key] = value
