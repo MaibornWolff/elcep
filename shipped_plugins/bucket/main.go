@@ -11,18 +11,18 @@ import (
 // The factory method for the plugin
 // noinspection GoUnusedExportedFunction
 func NewPlugin(options config.Options, _ interface{}) plugin.Plugin {
-	return &BucketAggregationPlugin{
+	return &bucketAggregationPlugin{
 		timeKey: options.TimeKey,
 	}
 }
 
-type BucketAggregationPlugin struct {
+type bucketAggregationPlugin struct {
 	timeKey    string
-	monitors   []BucketAggregationMonitor
+	monitors   []*bucketAggregationMonitor
 	collectors []prometheus.Collector
 }
 
-func (plugin *BucketAggregationPlugin) BuildMetrics(queries []config.Query) []prometheus.Collector {
+func (plugin *bucketAggregationPlugin) BuildMetrics(queries []config.Query) []prometheus.Collector {
 	for _, query := range queries {
 		log.Printf("Query loaded: %#v\n", query)
 		monitor := NewAggregationMonitor(Create(query, plugin.timeKey))
@@ -32,7 +32,7 @@ func (plugin *BucketAggregationPlugin) BuildMetrics(queries []config.Query) []pr
 	return plugin.collectors
 }
 
-func (plugin *BucketAggregationPlugin) Perform(elasticClient *elastic.Client) {
+func (plugin *bucketAggregationPlugin) Perform(elasticClient *elastic.Client) {
 	for _, monitor := range plugin.monitors {
 		monitor.Perform(elasticClient)
 	}

@@ -3,22 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/mitchellh/hashstructure"
 	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"math"
-	"strings"
 )
 
-type BucketAggregationMonitor struct {
-	cache   map[string]int64
+type bucketAggregationMonitor struct {
+	cache   map[uint64]int64
 	counter *prometheus.CounterVec
-	query   *BucketAggregationQuery
+	query   *bucketAggregationQuery
 }
 
-func NewAggregationMonitor(query *BucketAggregationQuery) BucketAggregationMonitor {
-	return BucketAggregationMonitor{
-		cache: make(map[string]int64),
+func NewAggregationMonitor(query *bucketAggregationQuery) *bucketAggregationMonitor {
+	return &bucketAggregationMonitor{
+		cache: make(map[uint64]int64),
 		counter: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "elcep_logs_matched_" + query.name + "_buckets",
 			Help: "Aggregates logs matching " + query.query + " to buckets",
@@ -27,35 +27,37 @@ func NewAggregationMonitor(query *BucketAggregationQuery) BucketAggregationMonit
 	}
 }
 
-func (monitor *BucketAggregationMonitor) Perform(client *elastic.Client) {
-	if response, err := monitor.query.build(client).Do(context.Background()); err != nil {
+func (monitor *bucketAggregationMonitor) Perform(client *elastic.Client) {
+	response, err := monitor.query.build(client).Do(context.Background())
+	if err != nil {
 		log.Printf("Elastic Query for %s failed: %v\n", monitor.query.name, err)
-	} else {
-		monitor.processAggregations(
-			&response.Aggregations, monitor.query.aggregations, prometheus.Labels{}, response.Hits.TotalHits)
+		return
 	}
+	monitor.processAggregations(
+		&response.Aggregations, monitor.query.aggregations, prometheus.Labels{}, response.Hits.TotalHits)
 }
 
-func (monitor *BucketAggregationMonitor) processAggregations(
+func (monitor *bucketAggregationMonitor) processAggregations(
 	container *elastic.Aggregations, expectedAggregations []string, labels prometheus.Labels, hits int64) {
-	if len(expectedAggregations) > 0 {
-		if buckets, ok := container.Terms(expectedAggregations[0]); !ok {
-			fmt.Printf("Missing terms aggregation %s in response %v\n", expectedAggregations[0], container)
-		} else {
-			for _, bucket := range buckets.Buckets {
-				monitor.processAggregations(
-					&bucket.Aggregations,
-					expectedAggregations[1:],
-					withLabel(labels, expectedAggregations[0], fmt.Sprintf("%v", bucket.Key)),
-					bucket.DocCount)
-			}
-		}
-	} else {
+
+	if len(expectedAggregations) == 0 {
 		monitor.updateCounter(hits, labels)
+		return
+	}
+	if buckets, ok := container.Terms(expectedAggregations[0]); !ok {
+		log.Printf("Missing terms aggregation %s in response %v\n", expectedAggregations[0], container)
+	} else {
+		for _, bucket := range buckets.Buckets {
+			monitor.processAggregations(
+				&bucket.Aggregations,
+				expectedAggregations[1:],
+				withLabel(labels, expectedAggregations[0], fmt.Sprintf("%v", bucket.Key)),
+				bucket.DocCount)
+		}
 	}
 }
 
-func (monitor *BucketAggregationMonitor) updateCounter(newCount int64, labels prometheus.Labels) {
+func (monitor *bucketAggregationMonitor) updateCounter(newCount int64, labels prometheus.Labels) {
 	if counter, err := monitor.counter.GetMetricWith(labels); err != nil {
 		log.Printf("Error getting the labeled counter: %s\n", err)
 	} else {
@@ -73,15 +75,14 @@ func withLabel(labels prometheus.Labels, key string, value string) prometheus.La
 	return newLabels
 }
 
-func (monitor *BucketAggregationMonitor) getInc(value int64, labels prometheus.Labels) float64 {
-	keys := make([]string, len(labels))
-	for i, bucket := range monitor.query.aggregations {
-		keys[i] = labels[bucket]
+func (monitor *bucketAggregationMonitor) getInc(value int64, labels prometheus.Labels) float64 {
+	hash, err := hashstructure.Hash(labels, nil)
+	if err != nil {
+		log.Printf("An error occured while hashing the labels: %v\n", err)
 	}
-	key := strings.Join(keys, "|")
 
-	lastVal, ok := monitor.cache[key]
-	monitor.cache[key] = value
+	lastVal, ok := monitor.cache[hash]
+	monitor.cache[hash] = value
 	if ok {
 		return math.Max(0, float64(value-lastVal))
 	} else {

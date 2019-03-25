@@ -13,6 +13,7 @@ RUN go get -v -d -t gopkg.in/yaml.v2
 RUN go get -v -d -t github.com/olivere/elastic
 RUN go get -v -d -t github.com/prometheus/client_golang/prometheus
 RUN go get -v -d -t github.com/golang/mock/gomock
+RUN go get -v -d -t github.com/mitchellh/hashstructure
 
 COPY . /go/src/github.com/MaibornWolff/elcep
 WORKDIR /go/src/github.com/MaibornWolff/elcep

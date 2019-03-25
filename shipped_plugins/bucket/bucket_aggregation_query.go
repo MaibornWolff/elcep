@@ -9,31 +9,32 @@ import (
 
 var startupTime = time.Now()
 
-type BucketAggregationQuery struct {
+type bucketAggregationQuery struct {
 	name         string
 	query        string
 	aggregations []string
 	timeKey      string
 }
 
-func Create(query config.Query, timeKey string) *BucketAggregationQuery {
-	aggregations := make([]string, 0, 4)
-
-	if aggregationConfig, ok := query["aggregations"]; !ok {
+func Create(query config.Query, timeKey string) *bucketAggregationQuery {
+	aggregationConfig, ok := query["aggregations"];
+	if !ok {
 		log.Fatalf("Malformed query %v, missing 'aggregations'\n", query)
-	} else if aggregationSlice, ok := aggregationConfig.([] interface{}); !ok {
+	}
+	aggregationSlice, ok := aggregationConfig.([] interface{})
+	if !ok {
 		log.Fatalf("Malformed query %v, 'aggregations' should be of type %T\n", query, aggregationSlice)
-	} else {
-		for _, _field := range aggregationSlice {
-			field, ok2 := _field.(string)
-			if !ok2 {
-				log.Fatalf("Malformed query %v, %s should be a string", query, _field)
-			}
-			aggregations = append(aggregations, field)
+	}
+	aggregations := make([]string, len(aggregationSlice))
+	for index, _field := range aggregationSlice {
+		field, ok2 := _field.(string)
+		if !ok2 {
+			log.Fatalf("Malformed query %v, %s should be a string", query, _field)
 		}
+		aggregations[index] = field
 	}
 
-	return &BucketAggregationQuery{
+	return &bucketAggregationQuery{
 		name:         query.Name(),
 		query:        query.QueryText(),
 		aggregations: aggregations,
@@ -41,7 +42,7 @@ func Create(query config.Query, timeKey string) *BucketAggregationQuery {
 	}
 }
 
-func (query *BucketAggregationQuery) build(elasticClient *elastic.Client) *elastic.SearchService {
+func (query *bucketAggregationQuery) build(elasticClient *elastic.Client) *elastic.SearchService {
 	service := elasticClient.Search().Query(elastic.NewBoolQuery().
 		Must(elastic.
 			NewQueryStringQuery(query.query)).
