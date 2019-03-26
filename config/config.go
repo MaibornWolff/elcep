@@ -18,7 +18,6 @@ type Options struct {
 	Config           string
 	PluginDir        string
 	Path             string
-	TimeKey          string
 }
 
 // Configuration holds both the application config and the plugin configuration
@@ -68,9 +67,6 @@ func parseCli() Options {
 	path := kingpin.Flag("path", "The resource path for the prometheus endpoint").
 		Default("/metrics").
 		Envar("ELCEP_METRICS_ENDPOINT").String()
-	timekey := kingpin.Flag("time-key", "The timekey to use for the elasticsearch queries").
-		Default("@timestamp").
-		Envar("ELCEP_TIME_KEY").String()
 
 	// Todo read version during compilation: https://blog.alexellis.io/inject-build-time-vars-golang/
 	kingpin.Version("0.7") // elcep version
@@ -85,6 +81,5 @@ func parseCli() Options {
 		Config:           *config,
 		PluginDir:        *pluginDir,
 		Path:             *path,
-		TimeKey:          *timekey,
 	}
 }

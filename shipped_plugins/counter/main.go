@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"math"
 	"time"
 
 	"github.com/MaibornWolff/elcep/config"
@@ -11,12 +12,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var startupTime = time.Now()
-
 // LogCounterMonitor is a monitor for a certain query and exports both a Counter and a Histogram to Prometheus
 type LogCounterMonitor struct {
 	query     config.Query
-	LastCount *int64
+	lastCount *int64
 	metrics   struct {
 		matchCounter         prometheus.Counter
 		rpcDurationHistogram prometheus.Histogram
@@ -25,7 +24,6 @@ type LogCounterMonitor struct {
 
 // CounterPlugin is the exported plugin type. It implements plugin.Plugin
 type CounterPlugin struct {
-	timeKey    string
 	monitors   []*LogCounterMonitor
 	collectors []prometheus.Collector
 }
@@ -33,39 +31,37 @@ type CounterPlugin struct {
 func (cp *CounterPlugin) BuildMetrics(queries []config.Query) []prometheus.Collector {
 	for _, query := range queries {
 		log.Printf("Query: %#v\n", query)
-		monitor := LogCounterMonitor{}
+		monitor := LogCounterMonitor{
+			query:     query,
+			lastCount: nil,
+		}
 		cp.monitors = append(cp.monitors, &monitor)
-		cp.collectors = append(cp.collectors, monitor.BuildMetrics(query)...)
+		cp.collectors = append(cp.collectors, monitor.BuildMetrics()...)
 	}
 	return cp.collectors
 }
 
 func (cp *CounterPlugin) Perform(elasticClient *elastic.Client) {
 	for _, monitor := range cp.monitors {
-		monitor.Perform(elasticClient, cp.timeKey)
+		monitor.Perform(elasticClient)
 	}
 }
 
 // NewPlugin must be exported. The name should be exactly "NewMonitor" and returns an instance of the custommonitor
 // noinspection GoUnusedExportedFunction
-func NewPlugin(options config.Options, _ interface{}) plugin.Plugin {
-	return &CounterPlugin{
-		timeKey: options.TimeKey,
-	}
+func NewPlugin(_ config.Options, _ interface{}) plugin.Plugin {
+	return &CounterPlugin{}
 }
 
 // BuildMetrics must exist and return a list of prometheus metrics instances
-func (logMon *LogCounterMonitor) BuildMetrics(query config.Query) []prometheus.Collector {
-	logMon.LastCount = new(int64)
-	logMon.query = query
-
+func (logMon *LogCounterMonitor) BuildMetrics() []prometheus.Collector {
 	logMon.metrics.matchCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "elcep_logs_matched_" + query.Name() + "_total",
-		Help: "Counts number of matched logs for " + query.Name(),
+		Name: "elcep_logs_matched_" + logMon.query.Name() + "_total",
+		Help: "Counts number of matched logs for " + logMon.query.Name(),
 	})
 	logMon.metrics.rpcDurationHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Name:    "elcep_logs_matched_rpc_durations_" + query.Name() + "_histogram_seconds",
-		Help:    "Logs matched RPC latency distributions for " + query.Name(),
+		Name:    "elcep_logs_matched_rpc_durations_" + logMon.query.Name() + "_histogram_seconds",
+		Help:    "Logs matched RPC latency distributions for " + logMon.query.Name(),
 		Buckets: prometheus.DefBuckets,
 	})
 
@@ -73,34 +69,30 @@ func (logMon *LogCounterMonitor) BuildMetrics(query config.Query) []prometheus.C
 }
 
 // Perform must exist and implement some custom action which runs frequently
-func (logMon *LogCounterMonitor) Perform(elasticClient *elastic.Client, timeKey string) {
-	increment, duration := logMon.runQuery(elasticClient, timeKey)
+func (logMon *LogCounterMonitor) Perform(elasticClient *elastic.Client) {
+	increment, duration := logMon.runQuery(elasticClient)
 	logMon.metrics.rpcDurationHistogram.Observe(duration)
-	logMon.metrics.matchCounter.Add(float64(increment))
+	logMon.metrics.matchCounter.Add(increment)
 }
 
-func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client, timeKey string) (increment int64, duration float64) {
+func (logMon *LogCounterMonitor) runQuery(elasticClient *elastic.Client) (increment float64, duration float64) {
 	start := time.Now()
-	query := elastic.NewBoolQuery().
-		Must(elastic.
-			NewQueryStringQuery(logMon.query.QueryText())).
-		Filter(elastic.
-			NewRangeQuery(timeKey).
-			Gte(startupTime.Format("2006-01-02 15:04:05")).
-			Format("yyyy-MM-dd HH:mm:ss"))
+	query := elastic.NewBoolQuery().Must(elastic.NewQueryStringQuery(logMon.query.QueryText()))
 	response, err := elasticClient.Search().Query(query).Do(context.Background())
 	duration = time.Now().Sub(start).Seconds()
 
-	if err == nil {
-		increment = response.Hits.TotalHits - *logMon.LastCount
-		if increment < 0 {
-			increment = 0
-		}
-		*logMon.LastCount = response.Hits.TotalHits
-	} else {
+	increment = 0
+	if err != nil {
 		log.Printf("Error on query: %#v\n", err)
-		increment = 0
+		return
 	}
+	if logMon.lastCount == nil {
+		// skip on first query
+		logMon.lastCount = new(int64)
+	} else {
+		increment = math.Max(0, float64(response.Hits.TotalHits-*logMon.lastCount))
+	}
+	*logMon.lastCount = response.Hits.TotalHits
 	return
 }
 
