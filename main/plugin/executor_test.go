@@ -1,8 +1,8 @@
 package plugin
 
 import (
-	"github.com/MaibornWolff/elcep/config"
-	"github.com/MaibornWolff/elcep/plugin/mock_plugin"
+	"github.com/MaibornWolff/elcep/main/config"
+	"github.com/MaibornWolff/elcep/main/plugin/mock_plugin"
 	"github.com/golang/mock/gomock"
 	"gopkg.in/go-playground/assert.v1"
 	"testing"

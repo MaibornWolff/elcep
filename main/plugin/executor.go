@@ -7,7 +7,7 @@ import (
 
 	"github.com/olivere/elastic"
 
-	"github.com/MaibornWolff/elcep/config"
+	"github.com/MaibornWolff/elcep/main/config"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
