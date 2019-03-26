@@ -49,7 +49,8 @@ func (query *bucketAggregationQuery) build(elasticClient *elastic.Client) *elast
 		Filter(elastic.
 			NewRangeQuery(query.timeKey).
 			Gte(startupTime.Format("2006-01-02 15:04:05")).
-			Format("yyyy-MM-dd HH:mm:ss")))
+			Format("yyyy-MM-dd HH:mm:ss"))).
+		FilterPath("hits.total,aggregations")
 	if len(query.aggregations) > 0 {
 		service = service.Aggregation(createAggregations(query.aggregations))
 	}
