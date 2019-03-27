@@ -25,7 +25,7 @@ RUN go build -o elcep
 
 # build shipped_plugins
 WORKDIR /go/src/github.com/MaibornWolff/elcep/shipped_plugins
-RUN for dir in */; do OUTPUT_DIR="$(pwd)" ./${dir}build.sh; done
+RUN for dir in */; do chmod +x ${dir}build.sh && OUTPUT_DIR="$(pwd)" ./${dir}build.sh; done
 
 FROM alpine
 
