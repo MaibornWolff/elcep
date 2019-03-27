@@ -15,8 +15,12 @@ RUN go get -v -d -t github.com/prometheus/client_golang/prometheus
 RUN go get -v -d -t github.com/golang/mock/gomock
 RUN go get -v -d -t github.com/mitchellh/hashstructure
 
-COPY . /go/src/github.com/MaibornWolff/elcep
 WORKDIR /go/src/github.com/MaibornWolff/elcep
+
+COPY config config
+COPY plugin plugin
+COPY shipped_plugins shipped_plugins
+COPY main.go .
 
 # build elcep
 RUN go get -d -v -t ./...
