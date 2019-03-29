@@ -1,14 +1,14 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"strconv"
-
 	"github.com/MaibornWolff/elcep/config"
 	"github.com/MaibornWolff/elcep/plugin"
 	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 func initExecutor(configuration *config.Configuration) *plugin.Executor {
 	pluginProvider := plugin.NewPluginProvider(configuration.Options.PluginDir)
 
-	client, err := elastic.NewClient(elastic.SetURL(configuration.Options.ElasticsearchURL.String()))
+	client, err := elastic.NewClient(elastic.SetHealthcheckTimeoutStartup(30*time.Second), elastic.SetURL(configuration.Options.ElasticsearchURL.String()))
 	if err != nil {
 		log.Fatal(err)
 	}

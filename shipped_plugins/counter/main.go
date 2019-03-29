@@ -32,7 +32,7 @@ type CounterPlugin struct {
 
 func (cp *CounterPlugin) BuildMetrics(queries []config.Query) []prometheus.Collector {
 	for _, query := range queries {
-		log.Printf("Query: %#v\n", query)
+		log.Printf("Query loaded: %#v\n", query)
 		monitor := LogCounterMonitor{}
 		cp.monitors = append(cp.monitors, &monitor)
 		cp.collectors = append(cp.collectors, monitor.BuildMetrics(query)...)

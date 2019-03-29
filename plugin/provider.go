@@ -70,6 +70,8 @@ func (provider *Provider) initializePlugins(fileNames []string) {
 
 		pluginName := getLogicalPluginName(file)
 		provider.Plugins[pluginName] = m
+
+		log.Printf("Plugin detected: %s\n", pluginName)
 	}
 }
 

@@ -1,6 +1,6 @@
 FROM maibornwolff/elcep:builder-1.10.2 AS build-env
 
-LABEL version=0.5
+LABEL version=1.1
 
 RUN mkdir -p /go/src/github.com/MaibornWolff/elcep
 RUN mkdir -p /go/src/github.com/MaibornWolff/elcep/plugins
@@ -13,9 +13,14 @@ RUN go get -v -d -t gopkg.in/yaml.v2
 RUN go get -v -d -t github.com/olivere/elastic
 RUN go get -v -d -t github.com/prometheus/client_golang/prometheus
 RUN go get -v -d -t github.com/golang/mock/gomock
+RUN go get -v -d -t github.com/mitchellh/hashstructure
 
-COPY . /go/src/github.com/MaibornWolff/elcep
 WORKDIR /go/src/github.com/MaibornWolff/elcep
+
+COPY config config
+COPY plugin plugin
+COPY shipped_plugins shipped_plugins
+COPY main.go .
 
 # build elcep
 RUN go get -d -v -t ./...
@@ -24,7 +29,7 @@ RUN go build -o elcep
 
 # build shipped_plugins
 WORKDIR /go/src/github.com/MaibornWolff/elcep/shipped_plugins
-RUN for dir in */; do OUTPUT_DIR="$(pwd)" ./${dir}build.sh; done
+RUN for dir in */; do chmod +x ${dir}build.sh && OUTPUT_DIR="$(pwd)" ./${dir}build.sh; done
 
 FROM alpine
 
