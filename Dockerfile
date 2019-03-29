@@ -29,6 +29,7 @@ RUN for dir in */; do                                           \
         cd $dir;                                                \
         go get -d -v -t ./...; go test -v ./...;                \
         go build --buildmode=plugin -o /app/plugins/${dir%?}.so;\
+        cd ..;                                                  \
     done
 
 FROM alpine

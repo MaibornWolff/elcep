@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/MaibornWolff/elcep/config"
+	"github.com/MaibornWolff/elcep/main/config"
 	"github.com/olivere/elastic"
 	"log"
 	"time"
