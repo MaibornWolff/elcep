@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"github.com/MaibornWolff/elcep/config"
+	"github.com/MaibornWolff/elcep/main/config"
 	"io/ioutil"
 	"log"
 	"path/filepath"

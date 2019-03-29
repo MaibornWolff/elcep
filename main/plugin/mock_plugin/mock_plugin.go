@@ -5,7 +5,7 @@
 package mock_plugin
 
 import (
-	config "github.com/MaibornWolff/elcep/config"
+	config "github.com/MaibornWolff/elcep/main/config"
 	gomock "github.com/golang/mock/gomock"
 	elastic "github.com/olivere/elastic"
 	prometheus "github.com/prometheus/client_golang/prometheus"

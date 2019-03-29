@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/MaibornWolff/elcep/config"
-	"github.com/MaibornWolff/elcep/plugin"
-	"github.com/olivere/elastic"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/MaibornWolff/elcep/main/config"
+	"github.com/MaibornWolff/elcep/main/plugin"
+	"github.com/olivere/elastic"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
