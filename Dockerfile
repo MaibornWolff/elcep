@@ -1,33 +1,39 @@
-FROM maibornwolff/elcep:builder-1.10.2 AS build-env
+FROM library/golang:1.12.6-alpine3.9 AS build-env
 
-LABEL version=1.1
+LABEL version=1.2
 
-# get some dependencies before copying the source
-# allows caching those deps =)
-RUN go get -v -d -t gopkg.in/alecthomas/kingpin.v2
-RUN go get -v -d -t gopkg.in/go-playground/assert.v1
-RUN go get -v -d -t gopkg.in/yaml.v2
-RUN go get -v -d -t github.com/olivere/elastic
-RUN go get -v -d -t github.com/prometheus/client_golang/prometheus
-RUN go get -v -d -t github.com/golang/mock/gomock
-RUN go get -v -d -t github.com/mitchellh/hashstructure
+RUN apk add --no-cache git gcc musl-dev
 
-RUN mkdir -p /go/src/github.com/MaibornWolff/elcep
+RUN mkdir -p /src/main
 RUN mkdir -p /app
+WORKDIR /src
+
+COPY main/go.mod main/.
+COPY main/plugin/go.mod main/plugin/
+COPY main/config/go.mod main/config/
+
+COPY main/go.sum .
+COPY main/plugin/go.sum main/plugin/
+COPY main/config/go.sum main/config/
+
+WORKDIR /src/main
+
+RUN go mod download
 
 # build elcep
-COPY main /go/src/github.com/MaibornWolff/elcep/main
-WORKDIR /go/src/github.com/MaibornWolff/elcep/main
-RUN go get -d -v -t ./...
-RUN go test -v ./...
+COPY main .
+
+RUN go test -v ./... 
 RUN go build -o /app/elcep
 
+WORKDIR /src
+
 # build plugins
-COPY plugins /go/src/github.com/MaibornWolff/elcep/plugins
-WORKDIR /go/src/github.com/MaibornWolff/elcep/plugins
+COPY plugins plugins
+WORKDIR /src/plugins
 RUN for dir in */; do                                           \
         cd $dir;                                                \
-        go get -d -v -t ./...; go test -v ./...;                \
+        go test -v ./...;                                       \
         go build --buildmode=plugin -o /app/plugins/${dir%?}.so;\
         cd ..;                                                  \
     done
