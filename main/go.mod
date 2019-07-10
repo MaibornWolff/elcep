@@ -7,8 +7,4 @@ require (
 	github.com/prometheus/client_golang v1.0.0
 )
 
-replace github.com/MaibornWolff/elcep/main/plugin v1.2.0 => ./plugin
-
-replace github.com/MaibornWolff/elcep/main/config v1.2.0 => ./config
-
 go 1.12
