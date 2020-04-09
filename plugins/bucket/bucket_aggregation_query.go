@@ -3,7 +3,9 @@ package main
 import (
 	"github.com/MaibornWolff/elcep/main/config"
 	"github.com/olivere/elastic"
+	"github.com/patrickmn/go-cache"
 	"log"
+	"regexp"
 	"time"
 )
 
@@ -31,7 +33,8 @@ func Create(query config.Query, timeKey string) *bucketAggregationQuery {
 		if !ok2 {
 			log.Fatalf("Malformed query %v, %s should be a string", query, _field)
 		}
-		aggregations[index] = field
+
+		aggregations[index] = getAllowedPrometheusLabel(field)
 	}
 
 	return &bucketAggregationQuery{
@@ -52,7 +55,8 @@ func (query *bucketAggregationQuery) build(elasticClient *elastic.Client) *elast
 			Format("yyyy-MM-dd HH:mm:ss"))).
 		FilterPath("hits.total,aggregations")
 	if len(query.aggregations) > 0 {
-		service = service.Aggregation(createAggregations(query.aggregations))
+		originAggregations := getOriginalAggregationKeys(query.aggregations)
+		service = service.Aggregation(createAggregations(originAggregations))
 	}
 	return service
 }
@@ -68,4 +72,28 @@ func createAggregations(aggregationKeys []string) (string, elastic.Aggregation) 
 		return aggregationKeys[0], elastic.NewTermsAggregation().Field(aggregationKeys[0]).
 			SubAggregation(createAggregations(aggregationKeys[1:]))
 	}
+}
+
+// Retrieve the origin label name from the cache
+func getOriginalAggregationKeys(s []string) []string{
+	strSlice := make([]string, 0)
+	for _ , str := range s {
+		if x, found := bucketCache.Get(str); found {
+			value := x.(string)
+			strSlice = append(strSlice, value)
+		}
+	}
+	return strSlice
+}
+
+
+// Replace given string special characters and return '_' instead.
+// save the origin label to cache.
+// https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+func getAllowedPrometheusLabel(s string) string {
+	var re = regexp.MustCompile(`[!@#$%^&*(),./\\?":{}|<>]`)
+	r := re.ReplaceAllString(s, `${1}_${2}`)
+	bucketCache.Set(r, s, cache.NoExpiration) // set origin label to the cache
+
+	return  r
 }

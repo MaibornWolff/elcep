@@ -4,9 +4,13 @@ import (
 	"github.com/MaibornWolff/elcep/main/config"
 	"github.com/MaibornWolff/elcep/main/plugin"
 	"github.com/olivere/elastic"
+	"github.com/patrickmn/go-cache"
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
+	"time"
 )
+
+var bucketCache = cache.New(cache.NoExpiration, 60*time.Minute)
 
 // The factory method for the plugin
 // noinspection GoUnusedExportedFunction
