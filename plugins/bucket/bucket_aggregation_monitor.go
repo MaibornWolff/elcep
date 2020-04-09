@@ -44,6 +44,7 @@ func (monitor *bucketAggregationMonitor) processAggregations(
 		monitor.updateCounter(hits, labels)
 		return
 	}
+	expectedAggregations = getOriginalAggregationKeys(expectedAggregations)
 	if buckets, ok := container.Terms(expectedAggregations[0]); !ok {
 		log.Printf("Missing terms aggregation %s in response %v\n", expectedAggregations[0], container)
 	} else {
@@ -67,7 +68,7 @@ func (monitor *bucketAggregationMonitor) updateCounter(newCount int64, labels pr
 
 func withLabel(labels prometheus.Labels, key string, value string) prometheus.Labels {
 	newLabels := prometheus.Labels{
-		key: value,
+		getAllowedPrometheusLabel(key): value,
 	}
 	for k, v := range labels {
 		newLabels[k] = v
