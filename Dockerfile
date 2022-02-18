@@ -40,8 +40,14 @@ RUN for dir in */; do                                           \
 
 FROM alpine:3.14
 
+# create non root user
+RUN addgroup -S nonroot && \
+adduser -S nonroot -G nonroot
+
 WORKDIR /app
-COPY --from=build-env /app/elcep /app/
-COPY --from=build-env /app/plugins/*.so /app/plugins/
+COPY --chown=nonroot:nonroot --from=build-env /app/elcep /app/
+COPY --chown=nonroot:nonroot --from=build-env /app/plugins/*.so /app/plugins/
+
+USER nonroot
 
 ENTRYPOINT ["./elcep"]
